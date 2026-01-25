@@ -1,0 +1,21 @@
+export const QR_TYPES = [
+  { id: null, name: "All QR", icon: "qrcode" },
+
+  { id: 1, name: "URL", icon: "link" },
+  { id: 2, name: "WiFi", icon: "wifi" },
+  { id: 3, name: "Phone", icon: "phone" },
+  { id: 4, name: "SMS", icon: "comment" },
+  { id: 5, name: "Email", icon: "envelope" },
+  { id: 6, name: "VCard", icon: "user" },
+  { id: 7, name: "Location", icon: "map-marker" },
+  { id: 8, name: "Text", icon: "file-text" },
+  { id: 9, name: "WhatsApp", icon: "whatsapp" },
+  { id: 10, name: "App Link", icon: "mobile" },
+  { id: 11, name: "Document", icon: "file" },
+  { id: 12, name: "File", icon: "upload" },
+  { id: 13, name: "Event", icon: "calendar" },
+  { id: 14, name: "App Download", icon: "download" },
+  { id: 15, name: "Payment", icon: "credit-card" },
+  { id: 16, name: "Multi Link", icon: "share-alt" },
+  { id: 17, name: "DBC", icon: "address-card" },
+];

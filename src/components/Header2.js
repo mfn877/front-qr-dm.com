@@ -1,0 +1,86 @@
+// src/components/Header2.js
+"use client";
+import { useEffect, useState } from "react";
+import secureLocalStorage from "react-secure-storage";
+import React from "react";
+import Link from "next/link";
+import { logoutUser } from "@/lib/auth";
+
+export default function Header2() {
+
+   const [userName, setUserName] = useState("");
+
+useEffect(() => {
+  const user = secureLocalStorage.getItem("qr_user");
+  if (user?.name) {
+    setUserName(user.name);
+  }
+}, []);
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    await logoutUser();
+    window.location.href = "/login";
+  };
+
+  return (
+    <header className="header">
+      <div className="header-content">
+        <Link href="/" className="logo">
+          <img style={{ width: "150px" }} src="/img/logo.png" alt="QR DM" />
+        </Link>
+
+        <nav className="nav">
+          <Link href="/" id="nav-home">Home</Link>
+          <Link href="/#nav-generator">QR Generate</Link>
+          <Link href="/dashboard" id="nav-dashboard">Dashboard</Link>
+        </nav>
+
+        <div className="header-buttons d-flex align-items-center">
+          <div className="dropdown ms-auto">
+            <button
+              className="btn user-btn dropdown-toggle d-flex align-items-center"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              {/* <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQkAJEkJQ1WumU0hXNpXdgBt9NUKc0QDVIiaw&s"
+                className="user-avatar me-2"
+                alt="User"
+              /> */}
+             <span className="user-name d-none d-md-inline">
+  {userName || "User"}
+</span>
+            </button>
+
+            <ul className="dropdown-menu dropdown-menu-end shadow-sm">
+              <li>
+                <a className="dropdown-item" href="/profile">
+                  Profile
+                </a>
+              </li>
+              <li>
+                <a className="dropdown-item" href="/settings">
+                  Settings
+                </a>
+              </li>
+              <li>
+                <hr className="dropdown-divider" />
+              </li>
+              <li>
+                <a
+                  className="dropdown-item text-danger"
+                  href="/login"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
