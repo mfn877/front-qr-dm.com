@@ -17,7 +17,7 @@ export default function EmailQR() {
   const EMAIL_TOTAL_MAX = 254;
   const EMAIL_LOCAL_MAX = 64;
   const EMAIL_DOMAIN_MAX = 255;
-  const MESSAGE_LIMIT = 160;
+  const MESSAGE_LIMIT = 500;
 
 
 

@@ -212,13 +212,13 @@ END:VCARD`
               <label className="input-label">
                Contact <RequiredStar />
               </label>
-              <input
-                type="tel"
-                className="input"
-                placeholder=" Phone Number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
+             <PhoneField
+                               label="Phone Number"
+                               required
+                               value={phone}
+                               onChange={setPhone}
+                               />
+          
               {phone && !isPhoneValid && (
                 <p style={{ color: "red", fontSize: 12 }}>
                   Please enter a valid phone number!

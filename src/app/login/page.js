@@ -30,13 +30,13 @@ export default function Page() {
         // Store token
         secureLocalStorage.setItem("qr_token", res.data.token);
         // ✅ Store user object
-        if (res.data.user) {
-          secureLocalStorage.setItem("qr_user", res.data.user);
+        if (res.user) {
+          secureLocalStorage.setItem("qr_user", res.user);
         }
 
         // Optional: store login flag
         secureLocalStorage.setItem("qr_logged_in", "true");
-        window.parent.postMessage("LOGIN_SUCCESS", window.location.origin);
+        window.parent.postMessage("LOGIN_SUCCESS", "*");
         // Redirect
         router.push("/dashboard");
       } else {

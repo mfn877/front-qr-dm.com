@@ -1,7 +1,9 @@
 import React from 'react'
 import Link from 'next/link'
+import secureLocalStorage from "react-secure-storage";
 
 export default function Header() {
+    const login = secureLocalStorage.getItem("qr_token");
     return (
         <header className="header">
             <div className="header-content">
@@ -9,14 +11,18 @@ export default function Header() {
                     <img style={{ width: "150px" }} src="/img/logo.png" />
                 </Link>
                 <nav className="nav">
-                    <Link href="/" id="nav-home">Home</Link>
-                    <Link href="/#nav-generator">QR Generate</Link>
-                    <Link href="/dashboard" id="nav-dashboard">Dashboard</Link>
+                    <Link className='d-lg-block d-none' href="/" id="nav-home">Home</Link>
+                    <Link className='d-lg-block d-none' href="/#nav-generator">QR Generate</Link>
+                    <Link className='d-lg-block d-none' href="/dashboard" id="nav-dashboard">Dashboard</Link>
                 </nav>
 
                 <div className="header-buttons">
                     <Link href="/login" className="btn btn-ghost">Login</Link>
                     <Link href="/signup" className="btn btn-primary">Sign Up</Link>
+                    {/* {!login && <> <Link href="/login" className="btn btn-ghost">Login</Link>
+                        <Link href="/signup" className="btn btn-primary">Sign Up</Link></>}
+                    {login && <><Link className='d-lg-none d-block' href="/#nav-generator">QR Generate</Link>
+                        <Link className='d-lg-none d-block' href="/dashboard" id="nav-dashboard">Dashboard</Link></>} */}
                 </div>
             </div>
         </header>

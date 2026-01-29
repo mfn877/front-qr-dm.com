@@ -4,7 +4,7 @@ export default function DisclaimerPage() {
   return (
     <div>
       {/* ================= INTRO ================= */}
-      <h1 style={{ fontSize: 22, marginBottom: 16 }}>Create Smart QR Codes in Seconds</h1>
+      <h1>Create Smart QR Codes in Seconds</h1>
 
       <p>
         QR DM is a fast and reliable QR code generator designed for personal,
@@ -19,7 +19,7 @@ export default function DisclaimerPage() {
       </p>
 
       {/* ================= PLATFORM OVERVIEW ================= */}
-      <h2 style={{ fontSize: 22, marginBottom: 16 }}>Built for Speed, Simplicity, and Reliability</h2>
+      <h2>Built for Speed, Simplicity, and Reliability</h2>
 
       <p>
         QR DM was built with a strong focus on speed, clarity, and performance.
@@ -34,7 +34,7 @@ export default function DisclaimerPage() {
       </p>
 
       {/* ================= FEATURES ================= */}
-      <h2 style={{ fontSize: 22, marginBottom: 16 }}>Smart Features That Work for You</h2>
+      <h2>Smart Features That Work for You</h2>
 
       <ul>
         <li>Dynamic QR codes that allow destination updates without reprinting</li>
@@ -46,7 +46,7 @@ export default function DisclaimerPage() {
       </ul>
 
       {/* ================= DESIGN ================= */}
-      <h2 style={{ fontSize: 22, marginBottom: 16 }}>Designed for Everyone</h2>
+      <h2>Designed for Everyone</h2>
 
       <p>
         QR DM is designed to be simple for beginners and powerful enough for
@@ -60,30 +60,24 @@ export default function DisclaimerPage() {
       </p>
 
       {/* ================= VISION ================= */}
-      <h2 style={{ fontSize: 22, marginBottom: 16 }}>Our Vision</h2>
-
+      <h2>Our Vision</h2>
       <p>
         We believe QR codes should be fast, smart, and accessible to everyone.
         As digital interaction continues to grow, QR DM is committed to
         building tools that make information sharing easier, more efficient,
         and more connected.
       </p>
-
       <p>
         We continuously improve our platform based on user feedback and
         real-world use cases.
       </p>
-
       {/* ================= CTA ================= */}
-      <h2 style={{ fontSize: 22, marginBottom: 16 }}>Get Started with QR DM</h2>
-
+      <h2>Get Started with QR DM</h2>
       <p>
         Create your first smart QR code in under 30 seconds using QR DM.
         Fast, clean, and powerful QR code generation for everyday and
         business use.
       </p>
-
-     
     </div>
   );
 }

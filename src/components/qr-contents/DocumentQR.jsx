@@ -5,12 +5,19 @@ import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
-
+import { isValidHttpsUrl } from "@/lib/urlValidation";
+import { useRouter } from "next/navigation";
 export default function DocumentQR() {
   /* ================= CONTENT ================= */
+  const router = useRouter();
   const [fileUrl, setFileUrl] = useState("");
   const [error, setError] = useState("");
-
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [updateQRID, setUpdateQRID] = useState(null);
+  const qrTypeID = 11; // QR Type ID for Document QR
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
@@ -21,22 +28,6 @@ export default function DocumentQR() {
   const [logo, setLogo] = useState(null);
 
   const [qrSvg, setQrSvg] = useState(null);
-
-  /* ================= FILE VALIDATION ================= */
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-
-    if (!file) {
-      setError("PLEASE UPLOAD A DOCUMENT !");
-      setFileUrl("");
-      return;
-    }
-
-    setError("");
-    setFileUrl(URL.createObjectURL(file));
-  };
-
-  const isFormValid = fileUrl !== "";
 
   /* ================= AUTH MODAL ================= */
   const openAuthModal = (type = "login") => {
@@ -56,24 +47,94 @@ export default function DocumentQR() {
     });
   };
 
+  /* ================= FILE UPLOAD ================= */
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+
+    if (!file) {
+      setError("PLEASE UPLOAD A FILE !");
+      setFileUrl("");
+      setUploadedFile(null);
+      return;
+    }
+
+    setError("");
+    setUploading(true);
+
+    try {
+      // Create FormData and upload file with QR metadata
+      const formData = new FormData();
+      formData.append("track", "0");
+      formData.append("qrtype", qrTypeID);
+      formData.append("file", qrSvg || "");
+      formData.append(
+        "content",
+        JSON.stringify({
+          url: "",
+        })
+      );
+      formData.append(
+        "design",
+        JSON.stringify({
+          qr_color: qrColor,
+          bg_color: bgColor,
+          size,
+          pattern,
+          eye_style: eyeStyle,
+        })
+      );
+      formData.append("documents[]", file);
+
+      const res = await api.post("/qr-data/document", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      if (res?.data?.status_code === 1 && res?.data?.documents[0]?.url) {
+        setFileUrl(res?.data?.documents[0]?.url);
+        setUploadedFile(file);
+        setUpdateQRID(res.data?.data?.id || null);
+      } else {
+        setError((res?.data?.message || "File upload failed. Please try again."));
+      }
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        callLoginModal();
+        return;
+      }
+      console.error("Upload error:", err);
+      setError("Failed to upload file. Please try again.");
+      setFileUrl("");
+      setUploadedFile(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const isFormValid = fileUrl !== "";
+
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
-    if (!isFormValid) {
+    const isValidUrl = isValidHttpsUrl(fileUrl);
+    if (!isValidUrl) {
       Swal.fire({
         icon: "error",
-        title: "Document Required",
-        text: "Please upload a document to generate QR.",
+        title: "Error",
+        text: "Please upload file before saving.",
       });
       return;
     }
 
+    setLoading(true);
+    setMessage("");
+
     try {
       const payload = {
-        track: 0,
-        qrtype: 11, // DOCUMENT QR
-        file: qrSvg,
+        // track: 0,
+        qrtype: qrTypeID,
+        file: qrSvg || null,
         content: {
-          document_url: fileUrl,
+          url: fileUrl,
         },
         design: {
           qr_color: qrColor,
@@ -84,14 +145,16 @@ export default function DocumentQR() {
         },
       };
 
-      const res = await api.post("/qr-data", payload);
+      const res = await api.put("/qr-data" + (updateQRID ? `/${updateQRID}` : ""), payload);
 
       if (res?.data?.status_code === 1) {
         Swal.fire({
           icon: "success",
           title: "QR Saved!",
-          text: "Your Document QR has been saved successfully.",
-        });
+          text: "Your QR code has been successfully saved to dashboard.",
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
+
       } else if (res?.data?.status === "unauthenticated") {
         Swal.fire({
           icon: "warning",
@@ -101,15 +164,31 @@ export default function DocumentQR() {
           confirmButtonText: "Login",
           denyButtonText: "Register",
         }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
+          if (result.isConfirmed) {
+            openAuthModal("login");
+          } else if (result.isDenied) {
+            openAuthModal("signup");
+          }
         });
-      } else {
-        Swal.fire("Error", "Unable to save QR.", "error");
+        return;
+      }
+
+      else {
+        Swal.fire({
+          icon: "error",
+          title: "Failed",
+          text: "Unable to save QR. Please try again.",
+        });
       }
     } catch (err) {
       console.error(err);
-      Swal.fire("Error", "Something went wrong.", "error");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong while saving the QR.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -297,6 +376,7 @@ export default function DocumentQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        updateQRID={updateQRID}
       />
     </>
   );

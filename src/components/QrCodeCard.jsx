@@ -1,3 +1,4 @@
+// src/components/QrCodeCard.jsx
 "use client";
 import { sanitizeSvg } from "@/utils/sanitizeSvg";
 import { truncate } from "@/utils/text";
@@ -8,28 +9,20 @@ export default function QrCodeCard({
   type,
   scans = 0,
   image,
-  onDownload,
-  onEdit,
   onDelete,
   svg,
   track = 0,
 }) {
+  // ensure we only use svg previews; otherwise fall back to default asset
+  const qr_image_url =
+    svg && typeof svg === "string" && svg.toLowerCase().endsWith(".svg")
+      ? svg
+      : "/img/qr-code.svg";
   return (
     <div className="card qr-code-card">
       {/* Thumbnail */}
       <div className="qr-thumbnail">
-        {svg ? (
-          <div
-            className="qr-svg"
-            dangerouslySetInnerHTML={{ __html: sanitizeSvg(svg) }}
-          />
-        ) : (
-          <img
-            className="w-100"
-            src="/img/qr-code.svg"
-            alt="QR code"
-          />
-        )}
+        <img className="w-100" src={qr_image_url} alt="QR code" />
       </div>
 
       {/* Title */}
@@ -43,7 +36,7 @@ export default function QrCodeCard({
 
       {/* Actions */}
       <div className="qr-actions">
-        <button className="action-btn" onClick={onDownload}>
+        <button className="action-btn">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
@@ -55,7 +48,7 @@ export default function QrCodeCard({
           Download
         </button>
 
-        <button className="action-btn" onClick={onEdit}>
+        <button className="action-btn">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"

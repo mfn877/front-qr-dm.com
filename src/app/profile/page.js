@@ -1,14 +1,29 @@
 "use client";
 import Footer from '@/components/Footer'
 import Header2 from '@/components/Header2'
-import React, { useState }  from 'react'
+import React, { useEffect, useState }  from 'react'
+import secureLocalStorage from "react-secure-storage";
 
 export default function page() {
 
-   // 👁 password toggle states
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const user = secureLocalStorage.getItem("qr_user");
+
+    if (user) {
+      setFullName(user.name || "");
+      setEmail(user.email || "");
+    }
+  }, []);
+
+
+  //  // 👁 password toggle states
+  // const [showCurrent, setShowCurrent] = useState(false);
+  // const [showNew, setShowNew] = useState(false);
+  // const [showConfirm, setShowConfirm] = useState(false);
   return (
     <>
       <Header2 />
@@ -24,20 +39,34 @@ export default function page() {
                     <input type="file" className="form-control w-auto d-inline-block" />
                   </div> */}
                 </div>
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Full Name</label>
-                    <input type="text" className="form-control" placeholder="Enter your name" />
-                  </div>
+               <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
-                  <div className="col-md-6">
-                    <label className="form-label">Email</label>
-                    <input type="email" className="form-control" placeholder="Enter your email" />
-                  </div>
+  <div className="input-group">
+    <label className="input-label form-label">Full Name</label>
+    <input
+      type="text"
+      className="input"
+      value={fullName}
+      placeholder="Enter your name"
+      onChange={(e) => setFullName(e.target.value)}
+    />
+  </div>
+
+  <div className="input-group">
+    <label className="input-label form-label">Email</label>
+    <input
+      type="email"
+      className="input"
+      value={email}
+      placeholder="Enter your email"
+      onChange={(e) => setEmail(e.target.value)}
+     
+    />
+  </div>
 
                      <hr className="my-4" />
 
-                <h5 className="mb-3 fw-semibold text-center">
+                {/* <h5 className="mb-3 fw-semibold text-center">
                   Change Password
                 </h5>
 
@@ -86,7 +115,7 @@ export default function page() {
                     </span>
                   </div>
 
-
+ */}
 
 
                   {/* <div className="col-md-6">

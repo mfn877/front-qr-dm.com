@@ -22,7 +22,7 @@ export default function TextQR() {
   const [qrSvg, setQrSvg] = useState(null);
 
   const isFormValid = text.trim().length > 0;
-  const TEXT_LIMIT = 160;
+  const TEXT_LIMIT = 600;
 
 
   /* ================= AUTH MODAL ================= */

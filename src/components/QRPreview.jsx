@@ -14,6 +14,8 @@ export default function QRPreview({
   onSave,
   onSvgReady,
 }) {
+  // console.log("QRPreview props:", { value, size, bgColor, qrColor, pattern, eyeStyle, logo });
+  
   const ref = useRef(null);
   const qr = useRef(null);
 
@@ -108,7 +110,7 @@ export default function QRPreview({
   };
 
   return (
-    <div className="qr-preview">
+    <div className="qr-preview mt-lg-0 mt-4">
       <div className="card">
         <h3 style={{ marginBottom: "1rem" }}>Preview</h3>
 

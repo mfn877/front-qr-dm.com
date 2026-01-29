@@ -6,11 +6,15 @@ import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
+import PhoneField from "@/components/common/PhoneField";
 
 export default function WhatsAppQR() {
   /* ================= CONTENT ================= */
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+
+  const MAX_MESSAGE_LENGTH = 500;
+
 
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
@@ -139,15 +143,14 @@ export default function WhatsAppQR() {
           <div className="card-body px-0 pb-0">
             <div className="input-group">
               <label className="input-label">
-                Phone Number <RequiredStar />
+                {/* <RequiredStar /> */}
               </label>
-              <input
-                type="text"
-                className="input"
-                placeholder="+91XXXXXXXXXX"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
+               <PhoneField
+                               label="Phone Number"
+                               required
+                               value={phone}
+                               onChange={setPhone}
+                               />
 
               {phone !== "" && !isValid && (
                 <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
@@ -165,8 +168,25 @@ export default function WhatsAppQR() {
                 rows="4"
                 placeholder="Type your message..."
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+               onChange={(e) => {
+               const value = e.target.value;
+             if (value.length <= MAX_MESSAGE_LENGTH) {
+             setMessage(value);
+             }
+             }}
               />
+
+              <p
+  style={{
+    fontSize: "12px",
+    marginTop: "4px",
+    color: message.length >= MAX_MESSAGE_LENGTH ? "red" : "#666",
+    textAlign: "right",
+  }}
+>
+  {message.length} / {MAX_MESSAGE_LENGTH}
+</p>
+
             </div>
           </div>
         </div>

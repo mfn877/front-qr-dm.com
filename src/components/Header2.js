@@ -5,37 +5,31 @@ import secureLocalStorage from "react-secure-storage";
 import React from "react";
 import Link from "next/link";
 import { logoutUser } from "@/lib/auth";
-
 export default function Header2() {
-
-   const [userName, setUserName] = useState("");
-
-useEffect(() => {
+  const [userName, setUserName] = useState("");
   const user = secureLocalStorage.getItem("qr_user");
-  if (user?.name) {
-    setUserName(user.name);
-  }
-}, []);
-
+  console.log("Header2 User:", user);
+  useEffect(() => {
+    if (user?.name) {
+      setUserName(user.name);
+    }
+  }, [user]);
   const handleLogout = async (e) => {
     e.preventDefault();
     await logoutUser();
     window.location.href = "/login";
   };
-
   return (
     <header className="header">
       <div className="header-content">
         <Link href="/" className="logo">
           <img style={{ width: "150px" }} src="/img/logo.png" alt="QR DM" />
         </Link>
-
         <nav className="nav">
-          <Link href="/" id="nav-home">Home</Link>
+          <Link className='d-lg-block d-none' href="/" id="nav-home">Home</Link>
           <Link href="/#nav-generator">QR Generate</Link>
-          <Link href="/dashboard" id="nav-dashboard">Dashboard</Link>
+          <Link className='d-lg-block d-none' href="/dashboard" id="nav-dashboard">Dashboard</Link>
         </nav>
-
         <div className="header-buttons d-flex align-items-center">
           <div className="dropdown ms-auto">
             <button
@@ -49,11 +43,10 @@ useEffect(() => {
                 className="user-avatar me-2"
                 alt="User"
               /> */}
-             <span className="user-name d-none d-md-inline">
-  {userName || "User"}
-</span>
+              <span className="user-name">
+                {userName || "User"}
+              </span>
             </button>
-
             <ul className="dropdown-menu dropdown-menu-end shadow-sm">
               <li>
                 <a className="dropdown-item" href="/profile">

@@ -6,6 +6,7 @@ import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
+import PhoneField from "@/components/common/PhoneField";
 
 export default function SmsQR() {
   const [phone, setPhone] = useState("");
@@ -21,7 +22,7 @@ export default function SmsQR() {
 
   const [qrSvg, setQrSvg] = useState(null);
 
-  const MESSAGE_LIMIT = 160;
+  const MESSAGE_LIMIT = 300;
 
 
   /* ======================
@@ -153,15 +154,16 @@ export default function SmsQR() {
           <div className="card-body px-0 pb-0">
             <div className="input-group">
               <label className="input-label">
-                Phone Number <RequiredStar />
+              {/* <RequiredStar /> */}
               </label>
-              <input
-                type="text"
-                className="input"
-                placeholder="Enter phone number "
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
+               
+                <PhoneField
+                  label="Phone Number"
+                  required
+                  value={phone}
+                  onChange={setPhone}
+                  />
+          
 
               {/* {phone !== "" && !isValid && (
                 <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>

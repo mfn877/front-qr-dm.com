@@ -142,8 +142,8 @@ export default function Faqs() {
   return (
     <div className="container" >
        {faqData.map((group, i) => (
-        <div key={i} style={{ marginBottom: 40 }}>
-          <h1 style={{ fontSize: 22, marginBottom: 16 }}>
+        <div key={i} className="mb-lg-5 mb-3">
+          <h1>
             {group.section}
           </h1>
 
@@ -175,21 +175,9 @@ function Accordion({ question, answer }) {
     >
       <button
         onClick={() => setOpen(!open)}
-        style={{
-          width: "100%",
-          padding: "16px",
-          fontSize: 16,
-          fontWeight: 600,
-          textAlign: "left",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          display: "flex",
-          justifyContent: "space-between"
-        }}
       >
         {question}
-        <span>{open ? "−" : "+"}</span>
+        <span className="float-end">{open ? "−" : "+"}</span>
       </button>
 
       {open && (

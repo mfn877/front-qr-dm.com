@@ -26,9 +26,9 @@ export default function WifiQR() {
      VALIDATION
   ======================= */
   const isSSIDEmpty = ssid.trim() === "";
-  const isSSIDValid = ssid.trim().length >= 3;
+  const isSSIDValid = ssid.trim().length >= 3-32;
   const isValidPassword =
-    security === "nopass" || password.trim().length >= 8;
+    security === "nopass" || password.trim().length >= 8-63;
 
   const isFormValid = isSSIDValid && !isSSIDEmpty && isValidPassword;
 

@@ -192,7 +192,7 @@ const isQrContentTooLong =
   </p>
 )}
 
-              {!isValidUrl && (
+              {!isValidUrl && text.length > 0 && (
                 <p style={{ color: "red", fontSize: 12, margin: "4px" }}>
                      PLEASE ENTER A VALID URL !
                 </p>

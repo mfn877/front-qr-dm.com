@@ -149,7 +149,7 @@ export default function Home() {
                   <i className="fa fa-qrcode me-1"></i> Create QR
                 </Link>
               </div>
-              <div className="col-md-5">
+              <div className="col-md-5 mt-lg-0 mt-5">
                 <img className="w-100" src="/img/qr-code.svg" />
               </div>
             </div>
@@ -197,7 +197,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3>Scan Analytics</h3>
-                <p>Track total scan counts and monitor engagement. r</p>
+                <p>Track total scan counts and monitor engagement.</p>
               </div>
               <div className="feature-card">
                 <div className="feature-icon">
@@ -282,6 +282,61 @@ export default function Home() {
                   Start creating QR codes instantly with no account required.{" "}
                 </p>
               </div>
+              <div className="feature-card">
+       <div className="feature-icon">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+        d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+        d="M6 21v-2a6 6 0 0112 0v2"
+      />
+    </svg>
+  </div>
+  <h3>Password Protection</h3>
+  <p>
+    Secure your QR codes with passwords to control who can access your content.
+  </p>
+</div>
+<div className="feature-card">
+  <div className="feature-icon">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+        d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+        d="M6 21v-2a6 6 0 0112 0v2"
+      />
+    </svg>
+  </div>
+  <h3>Custom Branding & Design</h3>
+  <p>
+    Brands love consistency, and custom-looking QR codes feel more professional and trustworthy.
+ 
+  </p>
+</div>
             </div>
           </div>
         </section>

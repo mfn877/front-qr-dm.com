@@ -3,7 +3,7 @@ import { QR_TYPES } from "@/constants/qrTypes";
 
 export default function QrTypeMenu({ activeType, onSelect }) {
   return (
-    <div className="qr-types-list">
+    <div>
       {QR_TYPES.map((type) => (
         <button
           key={type.id ?? "all"}

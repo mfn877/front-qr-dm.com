@@ -13,7 +13,7 @@ export default function page() {
       <Header />
       <div id="home-page" className="page active">
         <section
-          className="hero"
+          className="hero banner_top"
           style={{
             background:
               "linear-gradient(138.18deg, #eae8fd 0%, #fce5e6 94.44%)",
@@ -22,19 +22,17 @@ export default function page() {
         >
           <div className="container">
             <div className="row">
-              <div className="col-md-7 align-self-center">
+              <div className="col-md-7 order-lg-1 order-2 align-self-center">
                 <h1 className="mb-0">Frequently Asked Questions</h1>
               </div>
-              <div className="col-md-5 text-center">
-                <img style={{ width: 200 }} src="img/faqs.png" />
+              <div className="col-md-5 order-lg-2 order-1 text-center">
+                <img src="img/faqs.png" />
               </div>
             </div>
           </div>
         </section>
-        <section className="features-section">
-         
+        <section className="features-section faq-sections">
            <Faqs />
-          
         </section>
       </div>
       <Footer />

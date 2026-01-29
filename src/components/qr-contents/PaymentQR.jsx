@@ -39,6 +39,8 @@ export default function PaymentQR() {
 
   const [qrSvg, setQrSvg] = useState(null);
 
+  const DESCRIPTION_LIMIT = 200;
+
   /* ================= QR VALUE ================= */
   const paymentValue =
     paymentType === "upi" && isValidPaymentId
@@ -204,8 +206,20 @@ NOTE:${description}`
 
             <div className="input-group">
               <label className="input-label">Description (Optional)</label>
-              <textarea className="input" rows="3" placeholder="Payment description" value={description}
+              <textarea className="input" rows="3" placeholder="Payment description" value={description}   maxLength={DESCRIPTION_LIMIT}
                 onChange={(e) => setDescription(e.target.value)}> </textarea>
+
+                  <p
+                  style={{
+                 fontSize: "12px",
+                textAlign: "right",
+                color:
+                description.length === DESCRIPTION_LIMIT ? "red" : "#666",
+               marginTop: "4px",
+               }}
+               >
+                {description.length}/{DESCRIPTION_LIMIT} characters
+             </p>
             </div>
           </div>
         </div>

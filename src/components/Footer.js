@@ -18,14 +18,16 @@ export default function Footer() {
                             <ul>
                                 <li><Link href="/qr-generator/url">QR Generator</Link></li>
                                 <li><Link href="/dashboard">Dashboard</Link></li>
-                                <li><Link href="#features">Features</Link></li>
+                                <li><Link href="/feature">Features</Link></li>
                             </ul>
                         </div>
 
                         <div>
                             <h3>Resources</h3>
                             <ul>
-                               <li><Link href="/blog">Blog</Link></li>
+                                <li><Link href="/disclaimer">Disclaimer</Link></li>
+                                <li><Link href="/faq">FAQs</Link></li>
+                                <li><Link href="/contact">Contact Us</Link></li>
                             </ul>
                         </div>
 
@@ -35,15 +37,12 @@ export default function Footer() {
                                 <li><Link href="/about">About Us</Link></li>
                                 <li><Link href="/privacy-policy">Privacy Policy</Link></li>
                                 <li><Link href="/terms-and-conditions">Terms and Conditions</Link></li>
-                                <li><Link href="/disclaimer">Disclaimer</Link></li>
-                                  <li><Link href="/faq">FAQs</Link></li>
-                                <li><Link href="/contact">Contact Us</Link></li>
                             </ul>
                         </div>
                     </div>
 
                     <div className="footer-bottom">
-                        © 2025 QR-DM. All rights reserved. Managed by <Link href="https://ipistis.com">iPistis</Link>.
+                        © 2026 QR-DM. All rights reserved. Managed by <Link href="https://ipistis.com">iPistis</Link>.
                     </div>
                 </div>
             </div>
