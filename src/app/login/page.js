@@ -1,13 +1,14 @@
 // src/app/login/page.js
 "use client";
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { loginUser } from "@/services/authService";
 import secureLocalStorage from "react-secure-storage";
 
-export default function Page() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [form, setForm] = useState({
     email: "",
@@ -37,8 +38,9 @@ export default function Page() {
         // Optional: store login flag
         secureLocalStorage.setItem("qr_logged_in", "true");
         window.parent.postMessage("LOGIN_SUCCESS", "*");
-        // Redirect
-        router.push("/dashboard");
+        // Redirect to provided path or default dashboard
+        const redirectPath = searchParams.get("redirect");
+        router.push(redirectPath || "/dashboard");
       } else {
         setError(res?.message || "Invalid credentials");
       }
@@ -126,5 +128,13 @@ export default function Page() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="page auth-page">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

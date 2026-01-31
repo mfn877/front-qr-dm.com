@@ -1,12 +1,32 @@
+//src/components/qr-contents/MultiLinkQR.jsx
 "use client";
 import React, { useEffect, useState } from "react";
 import QRPreview2 from "../QRPreview2";
 import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
-import { getToken } from "@/utils/storage";
+import { getToken, isLoggedIn } from "@/utils/storage";
+import { callLoginModal } from "@/utils/authModal";
+import { useRouter } from "next/navigation";
 
 export default function MultiLinkQR() {
+  const router = useRouter();
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push(`/login?redirect=${encodeURIComponent("/qr-generator/multi-link")}`);
+    }
+  }, [router]);
+  const qrTypeID = 16; // Multi-Link QR Type ID
+  const [loading, setLoading] = useState(false);
+  const [newData, setNewData] = useState(0);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [fileUrl, setFileUrl] = useState("");
+  const [multiLinkURL, setMultiLinkURL] = useState("");
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [updateQRID, setUpdateQRID] = useState(1);
+
   /* ================= CONTENT STATES ================= */
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
@@ -17,8 +37,8 @@ export default function MultiLinkQR() {
   const [extraButtons, setExtraButtons] = useState([]);
 
   // ===== LIMITS =====
-const MAX_DESC_LENGTH = 160;        // description characters
-const MAX_QR_PAYLOAD = 900;         // safe QR data length (bytes)
+  const MAX_DESC_LENGTH = 160;        // description characters
+  const MAX_QR_PAYLOAD = 900;         // safe QR data length (bytes)
 
 
   /* ================= VALIDATION ================= */
@@ -34,21 +54,44 @@ const MAX_QR_PAYLOAD = 900;         // safe QR data length (bytes)
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
 
-  const [qrSvg, setQrSvg] = useState(null); 
+  const [qrSvg, setQrSvg] = useState(null);
+
+  const buildLinksPayload = () => {
+    const baseLinks = [];
+
+    if (btn1Label && btn1Url) {
+      baseLinks.push({ label: btn1Label, url: btn1Url });
+    }
+
+    if (btn2Label && btn2Url) {
+      baseLinks.push({ label: btn2Label, url: btn2Url });
+    }
+
+    extraButtons.forEach((btn) => {
+      if (btn.label && btn.url) {
+        baseLinks.push({ label: btn.label, url: btn.url });
+      }
+    });
+
+    return baseLinks;
+  };
+
+  const qrSize = `${size}x${size}`;
+
 
   const addNewButton = () => {
-  setExtraButtons((prev) => [
-    ...prev,
-    { label: "", url: "" }
-  ]);
-};
+    setExtraButtons((prev) => [
+      ...prev,
+      { label: "", url: "" }
+    ]);
+  };
 
-const removeLastButton = () => {
-  setExtraButtons((prev) => {
-    if (prev.length === 0) return prev; // safety
-    return prev.slice(0, -1);
-  });
-};
+  const removeLastButton = () => {
+    setExtraButtons((prev) => {
+      if (prev.length === 0) return prev; // safety
+      return prev.slice(0, -1);
+    });
+  };
 
   /* ================= QR VALUE ================= */
   const multiLinkValue =
@@ -64,62 +107,46 @@ const removeLastButton = () => {
             links: [
               btn1Label && btn1Url ? { label: btn1Label, url: btn1Url } : null,
               btn2Label && btn2Url ? { label: btn2Label, url: btn2Url } : null,
-        ...extraButtons.filter(b => b.label && b.url)
-          ].filter(Boolean), 
+              ...extraButtons.filter(b => b.label && b.url)
+            ].filter(Boolean),
           })
         )
       )}`
       : "";
 
 
-      const qrByteSize = multiLinkValue
-  ? new TextEncoder().encode(multiLinkValue).length
-  : 0;
+  const qrByteSize = multiLinkValue
+    ? new TextEncoder().encode(multiLinkValue).length
+    : 0;
 
-const isQrTooLarge = qrByteSize > MAX_QR_PAYLOAD;
-  /* ================= AUTH MODAL ================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
+  const isQrTooLarge = qrByteSize > MAX_QR_PAYLOAD;
 
-  /* ================= SAVE QR ================= */
-  const handleSaveQR = async () => {
-    if (!multiLinkValue) {
-      Swal.fire({
-        icon: "error",
-        title: "Invalid Data",
-        text: "Please enter valid multi-link details.",
-      });
+  const buildContentPayload = () => ({
+    title,
+    description: desc,
+    links: buildLinksPayload(),
+  });
+
+  /* ================= FILE UPLOAD ================= */
+  const handleCreateQR = async () => {
+    if (!isLoggedIn()) {
+      callLoginModal("/qr-generator/multi-link");
       return;
     }
 
+    if (!title || title.trim() === "") {
+      Swal.fire("Error", "Title is required to generate QR.", "error");
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const payload = {
-        track: 0,
-        qrtype: 16, // MULTI LINK QR
+        track: 1,
+        qrtype: qrTypeID, // 16
         file: qrSvg,
-        content: {
-          title,
-          description: desc,
-          links: [
-            btn1Label && btn1Url ? { label: btn1Label, url: btn1Url } : null,
-            btn2Label && btn2Url ? { label: btn2Label, url: btn2Url } : null,
-        ...extraButtons.filter(b => b.label && b.url)
-           ].filter(Boolean),
-        },
+        content: buildContentPayload(),
         design: {
           qr_color: qrColor,
           bg_color: bgColor,
@@ -129,49 +156,73 @@ const isQrTooLarge = qrByteSize > MAX_QR_PAYLOAD;
         },
       };
 
-      const res = await api.post("/qr-data", payload);
+      const res = await api.post("/qr-data", payload, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
 
       if (res?.data?.status_code === 1) {
-        Swal.fire("Saved!", "Multi-Link QR saved successfully.", "success");
-      } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        setUpdateQRID(res.data?.data?.id); // 🔥 critical
+        setMultiLinkURL("https://qr-dm.com/scan/multi-links/" + res.data?.data?.qid); // if API returns QR URL
+        setNewData(1);
+        Swal.fire("Success", "Multi-Link QR Created", "success");
       } else {
-        Swal.fire("Error", "Unable to save QR.", "error");
+        Swal.fire("Error", res?.data?.message || "Failed", "error");
       }
     } catch (err) {
       console.error(err);
-      Swal.fire("Error", "Something went wrong.", "error");
+      Swal.fire("Error", "Something went wrong", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
-  /* ================= LOGIN SUCCESS FIX ================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
 
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
+
+  const isFormValid = fileUrl !== "";
+
+  /* ================= SAVE QR ================= */
+  const handleUpdateQR = async () => {
+    if (updateQRID === 1) {
+      await handleCreateQR(); // EXACT SAME FLOW AS BUSINESS CARD
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await api.put(
+        `/qr-data/${updateQRID}`,
+        { file: qrSvg },
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
         }
-        Swal.close();
+      );
+
+      if (res?.data?.status_code === 1) {
+        setNewData(0);
+        Swal.fire("Updated", "Multi-Link QR Updated", "success");
+      } else {
+        Swal.fire("Error", res?.data?.message || "Update failed", "error");
       }
-    };
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Something went wrong", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
+  const handleSaveQR = async () => {
+    isLoggedIn() || callLoginModal("/qr-generator/multi-link");
+    await handleUpdateQR();
+  };
   return (
     <>
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -186,28 +237,28 @@ const isQrTooLarge = qrByteSize > MAX_QR_PAYLOAD;
             </div>
 
             <div className="input-group">
-  <label className="input-label">
-    Description (Optional)
-    <span style={{ fontSize: 12, marginLeft: 6, color: "#666" }}>
-      {desc.length}/{MAX_DESC_LENGTH}
-    </span>
-  </label>
+              <label className="input-label">
+                Description (Optional)
+                <span style={{ fontSize: 12, marginLeft: 6, color: "#666" }}>
+                  {desc.length}/{MAX_DESC_LENGTH}
+                </span>
+              </label>
 
-  <textarea
-    className="input"
-    rows="3"
-    placeholder="Enter description..."
-    value={desc}
-    maxLength={MAX_DESC_LENGTH}
-    onChange={(e) => setDesc(e.target.value)}
-  />
+              <textarea
+                className="input"
+                rows="3"
+                placeholder="Enter description..."
+                value={desc}
+                maxLength={MAX_DESC_LENGTH}
+                onChange={(e) => setDesc(e.target.value)}
+              />
 
-  {desc.length === MAX_DESC_LENGTH && (
-    <p style={{ color: "orange", fontSize: 12 }}>
-      Description limit reached
-    </p>
-  )}
-</div>
+              {desc.length === MAX_DESC_LENGTH && (
+                <p style={{ color: "orange", fontSize: 12 }}>
+                  Description limit reached
+                </p>
+              )}
+            </div>
 
             <div className="input-group">
               <label className="input-label">Button 1 Label</label>
@@ -219,79 +270,79 @@ const isQrTooLarge = qrByteSize > MAX_QR_PAYLOAD;
               <input type="url" className="input" placeholder="https://example.com" value={btn1Url} onChange={(e) => setBtn1Url(e.target.value)} />
               {!isValidBtn1Url && <p style={{ color: "red", fontSize: 12 }}>Invalid URL</p>}
             </div>
-{extraButtons.map((btn, index) => (
-  <div key={index} style={{ position: "relative" }}>
+            {extraButtons.map((btn, index) => (
+              <div key={index} style={{ position: "relative" }}>
 
-    {/* LABEL + REMOVE (TOP RIGHT OF LABEL) */}
-    <div className="input-group" style={{ position: "relative" }}>
-      <label className="input-label">
-        Button {index + 2} Label
-      </label>
+                {/* LABEL + REMOVE (TOP RIGHT OF LABEL) */}
+                <div className="input-group" style={{ position: "relative" }}>
+                  <label className="input-label">
+                    Button {index + 2} Label
+                  </label>
 
-      {/* REMOVE BUTTON (FEATURE UNCHANGED) */}
-      <button
-        type="button"
-        className="btn btn-outline-danger remove-btn"
-        style={{
-          position: "absolute",
-          top: "0",
-          right: "0",
-        }}
-        onClick={() =>
-          setExtraButtons(extraButtons.filter((_, i) => i !== index))
-        }
-      >
-        ✕ 
-      </button>
+                  {/* REMOVE BUTTON (FEATURE UNCHANGED) */}
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger remove-btn"
+                    style={{
+                      position: "absolute",
+                      top: "0",
+                      right: "0",
+                    }}
+                    onClick={() =>
+                      setExtraButtons(extraButtons.filter((_, i) => i !== index))
+                    }
+                  >
+                    ✕
+                  </button>
 
-      <input
-        type="text"
-        className="input"
-        placeholder="e.g. Visit Website"
-        value={btn.label}
-        onChange={(e) => {
-          const copy = [...extraButtons];
-          copy[index].label = e.target.value;
-          setExtraButtons(copy);
-        }}
-      />
-    </div>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="e.g. Visit Website"
+                    value={btn.label}
+                    onChange={(e) => {
+                      const copy = [...extraButtons];
+                      copy[index].label = e.target.value;
+                      setExtraButtons(copy);
+                    }}
+                  />
+                </div>
 
-    {/* URL (NO REMOVE HERE) */}
-    <div className="input-group">
-      <label className="input-label">
-        Button {index + 2} URL
-      </label>
+                {/* URL (NO REMOVE HERE) */}
+                <div className="input-group">
+                  <label className="input-label">
+                    Button {index + 2} URL
+                  </label>
 
-      <input
-        type="url"
-        className="input"
-        placeholder="https://example.com"
-        value={btn.url}
-        onChange={(e) => {
-          const copy = [...extraButtons];
-          copy[index].url = e.target.value;
-          setExtraButtons(copy);
-        }}
-      />
-    </div>
+                  <input
+                    type="url"
+                    className="input"
+                    placeholder="https://example.com"
+                    value={btn.url}
+                    onChange={(e) => {
+                      const copy = [...extraButtons];
+                      copy[index].url = e.target.value;
+                      setExtraButtons(copy);
+                    }}
+                  />
+                </div>
 
-  </div>
-))}
+              </div>
+            ))}
 
 
-<div className="d-flex gap-2">
-  <button
-    type="button"
-    className="btn btn-outline-primary"
-    onClick={addNewButton}
-  >
-    + Add Button
-   </button>
-   </div> 
-   </div>
+            <div className="d-flex gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={addNewButton}
+              >
+                + Add Button
+              </button>
+            </div>
+          </div>
 
-   
+
         </div>
         <div className="card">
           <h3 style={{ marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -426,7 +477,7 @@ const isQrTooLarge = qrByteSize > MAX_QR_PAYLOAD;
       </div>
 
       <QRPreview2
-        value={multiLinkValue}
+        value={multiLinkURL}
         qrColor={qrColor}
         bgColor={bgColor}
         size={size}
@@ -435,6 +486,9 @@ const isQrTooLarge = qrByteSize > MAX_QR_PAYLOAD;
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        updateQRID={updateQRID}
+        qrtypeID={qrTypeID}
+        newData={newData}
       />
     </>
   );

@@ -6,6 +6,7 @@ import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
+import { callLoginModal } from "@/utils/authModal";
 
 export default function EmailQR() {
   /* ======================
@@ -44,34 +45,15 @@ export default function EmailQR() {
   ======================= */
   const emailValue = isEmailValid
     ? `mailto:${cleanEmail}?subject=${encodeURIComponent(
-        subject
-      )}&body=${encodeURIComponent(message)}`
+      subject
+    )}&body=${encodeURIComponent(message)}`
     : "";
-
-  /* ======================
-     AUTH MODAL
-  ======================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
 
   /* ======================
      SAVE QR
   ======================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/email");
     if (!isEmailValid) {
       Swal.fire({
         icon: "error",
@@ -107,47 +89,22 @@ export default function EmailQR() {
           icon: "success",
           title: "QR Saved!",
           text: "Your Email QR has been saved successfully.",
-        });
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/email");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/email");
+        return;
+      }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
-
-  /* ======================
-     LOGIN SUCCESS FIX
-  ======================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -167,23 +124,23 @@ export default function EmailQR() {
                 placeholder="name@example.com"
                 value={email}
                 maxLength={254}
-               onChange={(e) => {
-  let value = e.target.value;
+                onChange={(e) => {
+                  let value = e.target.value;
 
-  // total length check
-  if (value.length > EMAIL_TOTAL_MAX) return;
+                  // total length check
+                  if (value.length > EMAIL_TOTAL_MAX) return;
 
-  // split local and domain
-  const parts = value.split("@");
+                  // split local and domain
+                  const parts = value.split("@");
 
-  // local-part limit
-  if (parts[0].length > EMAIL_LOCAL_MAX) return;
+                  // local-part limit
+                  if (parts[0].length > EMAIL_LOCAL_MAX) return;
 
-  // domain-part limit
-  if (parts[1] && parts[1].length > EMAIL_DOMAIN_MAX) return;
+                  // domain-part limit
+                  if (parts[1] && parts[1].length > EMAIL_DOMAIN_MAX) return;
 
-  setEmail(value);
-}}
+                  setEmail(value);
+                }}
               />
 
               {email !== "" && !isEmailValid && (
@@ -206,28 +163,28 @@ export default function EmailQR() {
 
             <div className="input-group">
               <label className="input-label">Message</label>
-          <textarea
-          className="input"
-          rows="4"
-          placeholder="Enter SMS message"
-          value={message}
-          onChange={(e) => {
-          if (e.target.value.length <= MESSAGE_LIMIT) {
-          setMessage(e.target.value);
-          }
-      }}
-        />
+              <textarea
+                className="input"
+                rows="4"
+                placeholder="Enter SMS message"
+                value={message}
+                onChange={(e) => {
+                  if (e.target.value.length <= MESSAGE_LIMIT) {
+                    setMessage(e.target.value);
+                  }
+                }}
+              />
 
-        <p
-  style={{
-    fontSize: "12px",
-    textAlign: "right",
-    color: message.length === MESSAGE_LIMIT ? "red" : "#666",
-    marginTop: "4px",
-  }}
->
-  {message.length}/{MESSAGE_LIMIT} characters
-</p>
+              <p
+                style={{
+                  fontSize: "12px",
+                  textAlign: "right",
+                  color: message.length === MESSAGE_LIMIT ? "red" : "#666",
+                  marginTop: "4px",
+                }}
+              >
+                {message.length}/{MESSAGE_LIMIT} characters
+              </p>
 
 
             </div>

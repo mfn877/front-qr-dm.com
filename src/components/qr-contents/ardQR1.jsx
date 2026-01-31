@@ -8,6 +8,7 @@ import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
 import PhoneField from "@/components/common/PhoneField";
+import { callLoginModal } from "@/utils/authModal";
 
 
 export default function VcardQR() {
@@ -36,17 +37,17 @@ export default function VcardQR() {
 
   const { isValid: isPhoneValid, cleanPhone } = validatePhone(phone);
   const { isValid: isEmailValid, cleanEmail } = validateEmail(email);
-  
+
   const jobTitleRegex = /^[A-Za-z .-]{2,50}$/;
 
   const isValidJobTitle =
-  jobTitle.trim() === "" || jobTitleRegex.test(jobTitle.trim());
- 
+    jobTitle.trim() === "" || jobTitleRegex.test(jobTitle.trim());
+
 
   const companyNameRegex = /^[A-Za-z0-9 &.-]{2,100}$/;
 
-const isValidCompanyName =
-  companyName.trim() === "" || companyNameRegex.test(companyName.trim());
+  const isValidCompanyName =
+    companyName.trim() === "" || companyNameRegex.test(companyName.trim());
 
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
@@ -64,7 +65,7 @@ const isValidCompanyName =
 
   /* ================= VCARD VALUE ================= */
   const canGenerateVCard =
-    isValidFirstName  && isPhoneValid ;
+    isValidFirstName && isPhoneValid;
 
   const vcardValue = canGenerateVCard
     ? `BEGIN:VCARD
@@ -77,26 +78,10 @@ EMAIL:${cleanEmail}
 END:VCARD`
     : "";
 
-  /* ================= AUTH MODAL ================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/vcard");
     if (!canGenerateVCard) {
       Swal.fire({
         icon: "error",
@@ -116,7 +101,7 @@ END:VCARD`
           last_name: lastName,
           phone: cleanPhone,
           email: cleanEmail,
-          organization: org,
+          organization: companyName,
         },
         design: {
           qr_color: qrColor,
@@ -134,45 +119,23 @@ END:VCARD`
           icon: "success",
           title: "QR Saved!",
           text: "Your vCard QR has been saved successfully.",
-        });
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/vcard");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/vcard");
+        return;
+      }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
 
-  /* ================= LOGIN SUCCESS FIX ================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -182,8 +145,8 @@ END:VCARD`
           <h3>vCard (Digital) Data</h3>
 
           <div className="card-body px-0 pb-0">
-         
-          {/* Name */}
+
+            {/* Name */}
             <div className="input-group">
               <label className="input-label">
                 Name <RequiredStar />
@@ -220,90 +183,90 @@ END:VCARD`
 
 
             {/* Corporate */}
-       <div className="input-group">
-  <label className="input-label">Corporate Information (optional)</label>
-  <input
-    type="text"
-    className="input"
-    placeholder="Company name"
-    value={companyName}
-    onChange={(e) => setCompanyName(e.target.value)}
-  />
-  {companyName && !isValidCompanyName && (
-    <p style={{ color: "red", fontSize: 12 }}>
-      Please enter a valid company name!
-    </p>
-  )}
-</div>
+            <div className="input-group">
+              <label className="input-label">Corporate Information (optional)</label>
+              <input
+                type="text"
+                className="input"
+                placeholder="Company name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+              {companyName && !isValidCompanyName && (
+                <p style={{ color: "red", fontSize: 12 }}>
+                  Please enter a valid company name!
+                </p>
+              )}
+            </div>
 
-<div className="input-group">
-  <label className="input-label"></label>
-  <input
-    type="text"
-    className="input"
-    placeholder="Job Title"
-    value={jobTitle}
-    onChange={(e) => setJobTitle(e.target.value)}
-  />
-  {jobTitle && !isValidJobTitle && (
-    <p style={{ color: "red", fontSize: 12 }}>
-      Please enter a valid title!
-    </p>
-  )}
-</div>
+            <div className="input-group">
+              <label className="input-label"></label>
+              <input
+                type="text"
+                className="input"
+                placeholder="Job Title"
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+              />
+              {jobTitle && !isValidJobTitle && (
+                <p style={{ color: "red", fontSize: 12 }}>
+                  Please enter a valid title!
+                </p>
+              )}
+            </div>
 
 
-               <div className="input-group">
-             <label className="input-label">Personal Information (optional)</label>
-             
-               {/* Image Upload Box */}
-  <label
-    htmlFor="imageUpload"
-    style={{
-      width: "100%",
-    border: "1px solid #8b7cff",
-    borderRadius: 6,
-    padding: "12px",
-    backgroundColor: "#f4f2ff",
-    color: "#8b7cff",
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    }}
-  >
-     {/* Upload Icon */}
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="7 10 12 15 17 10" />
-    <line x1="12" y1="15" x2="12" y2="3" />
-  </svg>
-    ⬇️ Upload Image
-  </label>
+            <div className="input-group">
+              <label className="input-label">Personal Information (optional)</label>
 
-  <input
-    id="imageUpload"
-    type="file"
-    accept="image/*"
-    style={{ display: "none" }}
-    onChange={(e) =>  setImageFile(e.target.files?.[0])}
-  />
-</div>
+              {/* Image Upload Box */}
+              <label
+                htmlFor="imageUpload"
+                style={{
+                  width: "100%",
+                  border: "1px solid #8b7cff",
+                  borderRadius: 6,
+                  padding: "12px",
+                  backgroundColor: "#f4f2ff",
+                  color: "#8b7cff",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+              >
+                {/* Upload Icon */}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                ⬇️ Upload Image
+              </label>
 
-           <div className="input-group">
-             <label className="input-label">Date of Birth</label>
+              <input
+                id="imageUpload"
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={(e) => setImageFile(e.target.files?.[0])}
+              />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Date of Birth</label>
               <input
                 type="date"
                 className="input"
@@ -311,18 +274,18 @@ END:VCARD`
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
               />
-          </div>
+            </div>
 
             <div className="input-group">
               <label className="input-label">
-               {/* Contact <RequiredStar /> */}
+                {/* Contact <RequiredStar /> */}
               </label>
-            <PhoneField
-             value={phone}
-             onChange={(val) => setPhone(val)}
-             required
-            
-            />
+              <PhoneField
+                value={phone}
+                onChange={(val) => setPhone(val)}
+                required
+
+              />
 
               {phone && !isPhoneValid && (
                 <p style={{ color: "red", fontSize: 12 }}>
@@ -352,25 +315,25 @@ END:VCARD`
               <input
                 type="url"
                 className="input"
-                 placeholder="https://example.com"
+                placeholder="https://example.com"
                 value={websites}
                 onChange={(e) => setWebsites(e.target.value)}
               />
             </div>
 
-            
+
             <div className="input-group">
               <label className="input-label">Address</label>
               <input
                 type="text"
                 className="input"
-                 placeholder="Address"
+                placeholder="Address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
               />
             </div>
 
-              {/* vCard Design */}
+            {/* vCard Design */}
             <div className="input-group">
               <label className="input-label">
                 vCard Design <i>(optional)</i>
@@ -387,7 +350,7 @@ END:VCARD`
           </div>
         </div>
 
-        
+
         {/* ================= CUSTOMIZATION ================= */}
         <div className="card">
           <h3 style={{ marginBottom: "1.5rem" }}>Customization</h3>
@@ -486,7 +449,7 @@ END:VCARD`
 
               {logo ? (
                 <img src={logo} alt="Logo" style={{ maxWidth: "100%", maxHeight: "100%" }} />
-                    
+
               ) : (
                 <>
                   <svg

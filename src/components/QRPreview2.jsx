@@ -1,6 +1,6 @@
 //src\components\QRPreview2.jsx
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import QRCodeStyling from "qr-code-styling";
 
 export default function QRPreview({
@@ -14,9 +14,11 @@ export default function QRPreview({
   onSave,
   onSvgReady,
   updateQRID,
+  qrtypeID,
+  newData
 }) {
-  console.log("QRPreview props:", { value, size, bgColor, qrColor, pattern, eyeStyle, logo,updateQRID });
-  
+  // console.log("QRPreview props:", { value, size, bgColor, qrColor, pattern, eyeStyle, logo,updateQRID });
+  const [svgReady, setSvgReady] = useState(false);
   const ref = useRef(null);
   const qr = useRef(null);
 
@@ -28,7 +30,21 @@ export default function QRPreview({
     const blob = await qr.current.getRawData("svg");
     const text = await blob.text();
     onSvgReady?.(text);
+    setSvgReady(true);
   };
+  const [btnText, setBtnText] = useState("Save to Dashboard");
+
+  useEffect(() => {
+    if (qrtypeID === 17 || qrtypeID === 16) {
+      setBtnText("Click to Update QR");
+    }
+  }, [qrtypeID, updateQRID]);
+
+  useEffect(() => {
+    if (newData === 1 && updateQRID > 1 && svgReady) {
+      onSave?.();
+    }
+  }, [newData, updateQRID, svgReady]);
 
 
   const getEyeOptions = () => {
@@ -123,7 +139,7 @@ export default function QRPreview({
             justifyContent: "center",
           }}>
 
-          {!hasValue && !updateQRID ? (
+          {!hasValue && updateQRID < 2 ? (
             <div style={{ opacity: 0.5, fontSize: 14 }}>
               Enter Details to generate QR
             </div>
@@ -137,7 +153,7 @@ export default function QRPreview({
             className="btn btn-primary"
             style={{ width: "100%" }}
             onClick={downloadPNG}
-            disabled={!hasValue && !updateQRID}
+            disabled={!hasValue && updateQRID < 2}
           >
             Download PNG
           </button>
@@ -146,7 +162,7 @@ export default function QRPreview({
             <button
               className="btn btn-secondary"
               onClick={downloadSVG}
-              disabled={!hasValue && !updateQRID}
+              disabled={!hasValue && updateQRID < 2}
             >
               SVG
             </button>
@@ -154,7 +170,7 @@ export default function QRPreview({
             <button
               className="btn btn-secondary"
               onClick={downloadPNG}
-              disabled={!hasValue}
+              disabled={!hasValue && updateQRID < 2}
             >
               Transparent
             </button>
@@ -168,7 +184,7 @@ export default function QRPreview({
         disabled={!hasValue && !updateQRID}
         onClick={onSave}
       >
-        Save to Dashboard
+        {updateQRID === 1 ? "Click to Generate/Save QR" : btnText}
       </button>
     </div>
   );

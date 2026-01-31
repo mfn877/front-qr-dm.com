@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import QRPreview2 from "../QRPreview2";
 import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
@@ -7,11 +7,20 @@ import Swal from "sweetalert2";
 import { callLoginModal, useLoginSuccessListener } from "@/utils/authModal";
 import { isValidHttpsUrl } from "@/lib/urlValidation";
 import { useRouter } from "next/navigation";
+import { isLoggedIn } from "@/utils/storage";
 
 export default function PdfQR() {
   /* ================= AUTH ================= */
   useLoginSuccessListener(api);
   const router = useRouter();
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push(`/login?redirect=${encodeURIComponent("/qr-generator/pdf")}`);
+    }
+  }, [router]);
+
+
+
   const qrTypeID = 12; // QR Type ID for PDF/File QR
   /* ================= CONTENT ================= */
   const [fileUrl, setFileUrl] = useState("");
@@ -80,11 +89,15 @@ export default function PdfQR() {
         setUploadedFile(file);
         setUpdateQRID(res.data?.data?.id || null);
       } else {
-        setError("File upload failed. Please try again. " + fileUrl);
+        if (res?.data?.status === "unauthenticated") {
+          callLoginModal("/qr-generator/pdf");
+          return;
+        }
+        setError((res?.data?.message || "File upload failed. Please try again."));
       }
     } catch (err) {
       if (err.response && err.response.status === 401) {
-        callLoginModal();
+        callLoginModal("/qr-generator/pdf");
         return;
       }
       console.error("Upload error:", err);
@@ -100,6 +113,7 @@ export default function PdfQR() {
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/pdf");
     const isValidUrl = isValidHttpsUrl(fileUrl);
     if (!isValidUrl) {
       Swal.fire({
@@ -130,7 +144,7 @@ export default function PdfQR() {
         },
       };
 
-      const res = await api.put("/qr-data"+ (updateQRID ? `/${updateQRID}` : ""), payload);
+      const res = await api.put("/qr-data" + (updateQRID ? `/${updateQRID}` : ""), payload);
 
       if (res?.data?.status_code === 1) {
         Swal.fire({
@@ -141,20 +155,7 @@ export default function PdfQR() {
         }).then(() => router.push("/dashboard"));
 
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            openAuthModal("login");
-          } else if (result.isDenied) {
-            openAuthModal("signup");
-          }
-        });
+        callLoginModal("/qr-generator/pdf");
         return;
       }
 
@@ -167,6 +168,10 @@ export default function PdfQR() {
       }
     } catch (err) {
       console.error(err);
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/pdf");
+        return;
+      }
       Swal.fire({
         icon: "error",
         title: "Error",

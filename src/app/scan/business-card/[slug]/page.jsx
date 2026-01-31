@@ -1,6 +1,40 @@
+//scr/app/scan/business-card/[slug]/page.jsx
 "use client";
-
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import axios from "axios";
+import api from "@/lib/api";
 export default function Page() {
+  const { slug } = useParams();
+  const [qrData, setQrData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const getSocialLink = (type) =>
+    content?.social_links?.find(
+      (s) => s.type?.toLowerCase() === type
+    )?.url;
+  useEffect(() => {
+    if (!slug) return;
+
+    api.get(`qr-data/front/${slug}`, {
+      headers: { Accept: "application/json" },
+    })
+      .then((res) => {
+        if (res?.data?.status_code === 1) {
+          setQrData(res.data.data);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  if (loading) {
+    return <p style={{ textAlign: "center", padding: 40 }}>Loading…</p>;
+  }
+
+  const content = qrData?.content || {};
+  const links = content?.links || [];
+
+  const findLink = (name) =>
+    links.find((l) => l.name?.toLowerCase() === name)?.url;
   /* COMPONENTS */
   const Contact = ({ icon, label, value }) => (
     <div className="list-item" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
@@ -37,85 +71,86 @@ export default function Page() {
   const GlobeIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="10" cy="10" r="8" /><path d="M2 10h16" /><path d="M10 2a12 12 0 0 1 0 16" /></svg>);
   const PhoneIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 2l4 2-2 4c2 4 4 6 8 8l4-2 2 4c-8 4-16-4-16-12z" /></svg>);
   const MailIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="16" height="12" /><path d="M2 4l8 6 8-6" /></svg>);
-const FacebookIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M14 9h3V6h-3c-2.76 0-5 2.24-5 5v2H7v3h2v6h3v-6h3l1-3h-4v-2c0-.55.45-1 1-1z"
-      fill="#1877F2"
-    />
-  </svg>
-);
-const InstagramIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="3" width="18" height="18" rx="5" stroke="#E1306C" strokeWidth="2"/>
-    <circle cx="12" cy="12" r="4" stroke="#E1306C" strokeWidth="2"/>
-    <circle cx="17" cy="7" r="1.2" fill="#E1306C"/>
-  </svg>
-);
-const XIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M4 4l7.5 9.5L4 20h3.5l5.5-5.8L17.5 20H21l-8-10 7-6h-3.5L12.5 8.7 7.5 4H4z"
-      fill="#000000"
-    />
-  </svg>
-);
-const LinkedinIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <rect x="2" y="2" width="20" height="20" rx="3" fill="#0A66C2"/>
-    <path d="M7 10v7" stroke="#fff" strokeWidth="2"/>
-    <circle cx="7" cy="7" r="1" fill="#fff"/>
-    <path d="M11 10v7" stroke="#fff" strokeWidth="2"/>
-    <path d="M11 13c0-2 3-2 3 0v4" stroke="#fff" strokeWidth="2"/>
-  </svg>
-);
+  const FacebookIcon = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M14 9h3V6h-3c-2.76 0-5 2.24-5 5v2H7v3h2v6h3v-6h3l1-3h-4v-2c0-.55.45-1 1-1z"
+        fill="#1877F2"
+      />
+    </svg>
+  );
+  const InstagramIcon = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="3" width="18" height="18" rx="5" stroke="#E1306C" strokeWidth="2" />
+      <circle cx="12" cy="12" r="4" stroke="#E1306C" strokeWidth="2" />
+      <circle cx="17" cy="7" r="1.2" fill="#E1306C" />
+    </svg>
+  );
+  const XIcon = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M4 4l7.5 9.5L4 20h3.5l5.5-5.8L17.5 20H21l-8-10 7-6h-3.5L12.5 8.7 7.5 4H4z"
+        fill="#000000"
+      />
+    </svg>
+  );
+  const LinkedinIcon = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <rect x="2" y="2" width="20" height="20" rx="3" fill="#0A66C2" />
+      <path d="M7 10v7" stroke="#fff" strokeWidth="2" />
+      <circle cx="7" cy="7" r="1" fill="#fff" />
+      <path d="M11 10v7" stroke="#fff" strokeWidth="2" />
+      <path d="M11 13c0-2 3-2 3 0v4" stroke="#fff" strokeWidth="2" />
+    </svg>
+  );
 
   return (
     <>
       <div className="page">
         {/* HEADER */}
         <div className="header">
-          <h1>ABC Company</h1>
+          <h1>Digital Business Card Data</h1>
         </div>
         {/* MAIN CARD */}
         <div className="main-card">
-          <h2>Clothing</h2>
-          <p>Selling</p>
-          <button>View</button>
+          <h2>{content?.name || "Unnamed"}</h2>
+          <p>{content?.title || ""}</p>
+          {/* <button>View</button> */}
         </div>
         <div className="container-fluid">
           {/* OPEN HOURS */}
           <div className="card">
-            <div className="list-item" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
-              <div className="icon-left">
-                <ClockIcon />
+            {content?.open_hours && (
+              <div className="list-item" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
+                <div className="icon-left">
+                  <ClockIcon />
+                </div>
+                <div className="list-text">
+                  <span><b>Open hours - </b><b className="closed">Closed</b></span></div>
+              </div>)}
+            {/* OPEN HOURS LIST */}
+            {content?.open_hours && content.open_hours.map((day, index) => (
+              <div className="row" key={index}>
+                <span>{day.day}</span>
+                <span>{day.opening_time} - {day.closing_time}</span>
               </div>
-              <div className="list-text">
-                <span><b>Open hours - </b><b className="closed">Closed</b></span></div>
-            </div>
-            <div className="row">
-              <span>Monday</span>
-              <span>04:34 pm - 08:34 pm</span>
-            </div>
-            <div className="row">
-              <span>Tuesday</span>
-              <span>05:34 pm - 08:34 pm</span>
-            </div>
+            ))}
           </div>
 
           {/* ADDRESS */}
-          <div className="card">
-            <div className="list-item" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
-              <div className="icon-left">
-                <LocationIcon />
+          {content?.address && (
+            <div className="card">
+              <div className="list-item" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
+                <div className="icon-left">
+                  <LocationIcon />
+                </div>
+                <div className="list-text">
+                  <span><b>Address</b></span>
+                </div>
               </div>
-              <div className="list-text">
-                <span><b>Address</b></span>
-              </div>
-            </div>
-            <p className="text mb-0" style={{ marginTop: 10 }}>Patna, BR, India</p>
-            <a className="link mb-2">Show on Map</a>
-          </div>
+              <p className="text mb-0" style={{ marginTop: 10 }}>{content.address}</p>
+              <a className="link mb-2">Show on Map</a>
+            </div>)}
           {/* CONTACT */}
           <div className="card">
             <div className="list-item mb-3" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
@@ -126,73 +161,137 @@ const LinkedinIcon = () => (
                 <span>Contact</span></div>
             </div>
 
-            <Contact icon={<UserIcon />} label="Name" value="7688449856" />
-            <Contact icon={<GlobeIcon />} label="google" value="www.google.com" />
-            <Contact icon={<PhoneIcon />} label="Phone" value="+91 6536374679" />
-            <Contact icon={<MailIcon />} label="Email" value="manya@kumari.com" />
+            <Contact icon={<UserIcon />} label="Name" value={content?.name || ""} />
+            <Contact icon={<GlobeIcon />} label="google" value={content?.website || ""} />
+            <Contact icon={<PhoneIcon />} label="Phone" value={content?.phone || ""} />
+            <Contact icon={<MailIcon />} label="Email" value={content?.email || ""} />
           </div>
           <h3>Our Social Networks</h3>
-          <div className="card">
-            <div className="list-item">
-              <div className="icon-left">
-                <GoogleIcon />
-              </div>
-              <div className="list-text">
-                <strong>Google Review</strong>
-                <p>follow and comment</p>
-              </div>
-              <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
-            </div>
+          {/* SOCIAL LINKS *
+          API DATA
+          "content": {
+            "name": "Harish",
+            "title": "Admin",
+            "phone": "+919953300349",
+            "email": "allabtweb@gmail.com",
+            "address": null,
+            "website": null,
+            "social_links": [
+                {
+                    "type": "instagram",
+                    "url": "https://ads.google.com/"
+                },
+                {
+                    "type": "facebook",
+                    "url": "https://ads.google.com/"
+                }
+            ]
+        },/ SOCIAL LINKS */}
 
-          </div>
-          <div className="card">
-            <div className="list-item">
-              <div className="icon-left">
-                <FacebookIcon />
-              </div>
-              <div className="list-text">
-                <strong>Facebook</strong>
-                <p>follow and comment</p>
-              </div>
-              <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
+          {getSocialLink("google") && (
+            <div className="card">
+              <a
+                href={getSocialLink("google")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="list-item"
+              >
+                <div className="icon-left">
+                  <GoogleIcon />
+                </div>
+                <div className="list-text">
+                  <strong>Google Review</strong>
+                  <p>follow and comment</p>
+                </div>
+                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
+              </a>
             </div>
-          </div>
-          <div className="card">
-            <div className="list-item">
-              <div className="icon-left">
-                <InstagramIcon />
-              </div>
-              <div className="list-text">
-                <strong>Instagram</strong>
-                <p>follow and comment</p>
-              </div>
-              <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
+          )}
+
+          {getSocialLink("facebook") && (
+            <div className="card">
+              <a
+                href={getSocialLink("facebook")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="list-item"
+              >
+                <div className="icon-left">
+                  <FacebookIcon />
+                </div>
+                <div className="list-text">
+                  <strong>Facebook</strong>
+                  <p>follow and comment</p>
+                </div>
+                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
+              </a>
             </div>
-          </div>
-          <div className="card">
-            <div className="list-item">
-              <div className="icon-left">
-                <XIcon />
-              </div>
-              <div className="list-text">
-                <strong>X</strong>
-                <p>follow and comment</p>
-              </div>
-              <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
+          )}
+
+          {getSocialLink("instagram") && (
+            <div className="card">
+              <a
+                href={getSocialLink("instagram")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="list-item"
+              >
+                <div className="icon-left">
+                  <InstagramIcon />
+                </div>
+                <div className="list-text">
+                  <strong>Instagram</strong>
+                  <p>follow and comment</p>
+                </div>
+                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
+              </a>
             </div>
-          </div>
-          <div className="card">
-            <div className="list-item">
-              <div className="icon-left">
-                <LinkedinIcon />
-              </div>
-              <div className="list-text">
-                <strong>Linkedin</strong>
-                <p>follow and comment</p>
-              </div>
-              <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
+          )}
+
+          {getSocialLink("x") && (
+            <div className="card">
+              <a
+                href={getSocialLink("x")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="list-item"
+              >
+                <div className="icon-left">
+                  <XIcon />
+                </div>
+                <div className="list-text">
+                  <strong>X</strong>
+                  <p>follow and comment</p>
+                </div>
+                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
+              </a>
             </div>
-          </div>
+          )}
+
+          {getSocialLink("linkedin") && (
+            <div className="card">
+              <a
+                href={getSocialLink("linkedin")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="list-item"
+              >
+                <div className="icon-left">
+                  <LinkedinIcon />
+                </div>
+                <div className="list-text">
+                  <strong>Linkedin</strong>
+                  <p>follow and comment</p>
+                </div>
+                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
+              </a>
+            </div>
+          )}
+
+<br />
+<hr />
+<br />
+          {/* LINKS SECTION */}
         </div>
       </div>
 

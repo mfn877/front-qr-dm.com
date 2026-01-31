@@ -7,6 +7,8 @@ import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import { isValidHttpsUrl } from "@/lib/urlValidation";
+import { callLoginModal } from "@/utils/authModal";
+import { getToken } from "@/utils/storage";
 
 
 export default function UrlQR() {
@@ -24,34 +26,17 @@ export default function UrlQR() {
   const [message, setMessage] = useState("");
   const [qrSvg, setQrSvg] = useState(null);
 
- const MAX_URL_LENGTH = 500;
-const MAX_QR_CONTENT_LENGTH = 450;
-const MIN_QR_SIZE_FOR_LONG_TEXT = 250;
+  const MAX_URL_LENGTH = 500;
+  const MAX_QR_CONTENT_LENGTH = 450;
+  const MIN_QR_SIZE_FOR_LONG_TEXT = 250;
 
-const isQrContentTooLong =
-  text.length > MAX_QR_CONTENT_LENGTH && size < MIN_QR_SIZE_FOR_LONG_TEXT;
-
-
-
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-      <div style="height:420px;">
-        <iframe
-          src="/${type}"
-          style="width:100%;height:100%;border:none;border-radius:6px;"
-        ></iframe>
-      </div>
-    `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
+  const isQrContentTooLong =
+    text.length > MAX_QR_CONTENT_LENGTH && size < MIN_QR_SIZE_FOR_LONG_TEXT;
 
 
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/url");
+
     if (!isValidUrl || !text) {
       Swal.fire({
         icon: "error",
@@ -92,20 +77,7 @@ const isQrContentTooLong =
         }).then(() => router.push("/dashboard"));
 
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            openAuthModal("login");
-          } else if (result.isDenied) {
-            openAuthModal("signup");
-          }
-        });
+        callLoginModal("/qr-generator/url");
         return;
       }
 
@@ -117,6 +89,10 @@ const isQrContentTooLong =
         });
       }
     } catch (err) {
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/url");
+        return;
+      }
       console.error(err);
       Swal.fire({
         icon: "error",
@@ -129,9 +105,9 @@ const isQrContentTooLong =
   };
 
 
- const isValidUrl = isValidHttpsUrl(text);
+  const isValidUrl = isValidHttpsUrl(text);
 
-    text.trim() === "" ||
+  text.trim() === "" ||
     (() => {
       try {
         const url = new URL(text);
@@ -144,21 +120,6 @@ const isQrContentTooLong =
         return false;
       }
     })();
-
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.data === "LOGIN_SUCCESS") {
-        Swal.close();
-        Swal.fire({
-          icon: "success",
-          title: "Logged In",
-          text: "You have successfully logged in, you can now save QR codes.",
-        });
-      }
-    };
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -175,26 +136,26 @@ const isQrContentTooLong =
                 className="input"
                 placeholder="https://example.com"
                 value={text}
-               onChange={(e) => {
-    if (e.target.value.length <= MAX_URL_LENGTH) {
-      setText(e.target.value);
-    }
-  }}
-/>
+                onChange={(e) => {
+                  if (e.target.value.length <= MAX_URL_LENGTH) {
+                    setText(e.target.value);
+                  }
+                }}
+              />
 
-<p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-  {text.length}/{MAX_URL_LENGTH} characters
-</p>
- 
- {isQrContentTooLong && (
-  <p style={{ color: "orange", fontSize: 12, marginTop: 4 }}>
-    QR may become unreadable. Increase size or shorten the URL.
-  </p>
-)}
+              <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                {text.length}/{MAX_URL_LENGTH} characters
+              </p>
+
+              {isQrContentTooLong && (
+                <p style={{ color: "orange", fontSize: 12, marginTop: 4 }}>
+                  QR may become unreadable. Increase size or shorten the URL.
+                </p>
+              )}
 
               {!isValidUrl && text.length > 0 && (
                 <p style={{ color: "red", fontSize: 12, margin: "4px" }}>
-                     PLEASE ENTER A VALID URL !
+                  PLEASE ENTER A VALID URL !
                 </p>
               )}
             </div>
@@ -390,11 +351,11 @@ const isQrContentTooLong =
 
       {/* PREVIEW */}
       <QRPreview
-         value={
-    isValidUrl && !isQrContentTooLong
-      ? text
-      : ""
-  }
+        value={
+          isValidUrl && !isQrContentTooLong
+            ? text
+            : ""
+        }
         qrColor={qrColor}
         bgColor={bgColor}
         size={size}

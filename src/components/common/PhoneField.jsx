@@ -10,7 +10,7 @@ export default function PhoneField({
   required = false,
   error = "",
 }) {
-  const [country, setCountry] = useState("in");
+  const [country, setCountry] = useState("");
 
   // 🌍 Auto-detect country
   useEffect(() => {

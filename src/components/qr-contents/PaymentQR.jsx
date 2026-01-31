@@ -5,6 +5,7 @@ import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
+import { callLoginModal } from "@/utils/authModal";
 
 export default function PaymentQR() {
   /* ================= CONTENT STATES ================= */
@@ -57,26 +58,10 @@ NOTE:${description}`
             ? `https://dashboard.stripe.com/${paymentId}`
             : "";
 
-  /* ================= AUTH MODAL ================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/payment");
     if (!paymentValue) {
       Swal.fire({
         icon: "error",
@@ -110,44 +95,26 @@ NOTE:${description}`
       const res = await api.post("/qr-data", payload);
 
       if (res?.data?.status_code === 1) {
-        Swal.fire("Saved!", "Payment QR saved successfully.", "success");
-      } else if (res?.data?.status === "unauthenticated") {
         Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+          icon: "success",
+          title: "QR Saved!",
+          text: "Your Payment QR has been saved successfully.",
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
+      } else if (res?.data?.status === "unauthenticated") {
+        callLoginModal("/qr-generator/payment");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/payment");
+        return;
+      }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
-
-  /* ================= LOGIN SUCCESS FIX ================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -206,20 +173,20 @@ NOTE:${description}`
 
             <div className="input-group">
               <label className="input-label">Description (Optional)</label>
-              <textarea className="input" rows="3" placeholder="Payment description" value={description}   maxLength={DESCRIPTION_LIMIT}
+              <textarea className="input" rows="3" placeholder="Payment description" value={description} maxLength={DESCRIPTION_LIMIT}
                 onChange={(e) => setDescription(e.target.value)}> </textarea>
 
-                  <p
-                  style={{
-                 fontSize: "12px",
-                textAlign: "right",
-                color:
-                description.length === DESCRIPTION_LIMIT ? "red" : "#666",
-               marginTop: "4px",
-               }}
-               >
+              <p
+                style={{
+                  fontSize: "12px",
+                  textAlign: "right",
+                  color:
+                    description.length === DESCRIPTION_LIMIT ? "red" : "#666",
+                  marginTop: "4px",
+                }}
+              >
                 {description.length}/{DESCRIPTION_LIMIT} characters
-             </p>
+              </p>
             </div>
           </div>
         </div>

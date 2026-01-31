@@ -1,14 +1,17 @@
 "use client";
 import Footer from '@/components/Footer'
 import Header2 from '@/components/Header2'
-import React, { useEffect, useState }  from 'react'
+import React, { useEffect, useState } from 'react'
 import secureLocalStorage from "react-secure-storage";
+import api from "@/services/api";
 
 export default function page() {
 
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState({ type: null, text: "" });
 
   useEffect(() => {
     const user = secureLocalStorage.getItem("qr_user");
@@ -19,11 +22,43 @@ export default function page() {
     }
   }, []);
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setStatusMessage({ type: null, text: "" });
 
-  //  // 👁 password toggle states
-  // const [showCurrent, setShowCurrent] = useState(false);
-  // const [showNew, setShowNew] = useState(false);
-  // const [showConfirm, setShowConfirm] = useState(false);
+    try {
+      const payload = {
+        name: fullName,
+        email,
+      };
+
+      const { data } = await api.put("/update", payload, {
+        headers: {
+          Accept: "application/json",
+        },
+        maxBodyLength: Infinity,
+      });
+
+      if (data?.status_code === 1) {
+        secureLocalStorage.setItem("qr_user", data.data);
+        setStatusMessage({
+          type: "success",
+          text: data?.message || "Profile updated successfully.",
+        });
+      }
+
+
+
+    } catch (error) {
+      console.error("Profile update failed", error);
+      const errorMessage = error?.response?.data?.message || "Unable to update profile. Please try again.";
+      setStatusMessage({ type: "error", text: errorMessage });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       <Header2 />
@@ -32,41 +67,41 @@ export default function page() {
           <div className="col-lg-8">
             <div className="card profile-card p-4">
               <h4 className="mb-4 fw-bold text-center">My Profile</h4>
-              <form>
+              <form onSubmit={handleSubmit}>
                 <div className="text-center mb-4">
                   {/* <img src="https://via.placeholder.com/120" className="profile-img mb-3" alt="Profile" /> */}
                   {/* <div>
                     <input type="file" className="form-control w-auto d-inline-block" />
                   </div> */}
                 </div>
-               <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
-  <div className="input-group">
-    <label className="input-label form-label">Full Name</label>
-    <input
-      type="text"
-      className="input"
-      value={fullName}
-      placeholder="Enter your name"
-      onChange={(e) => setFullName(e.target.value)}
-    />
-  </div>
+                  <div className="input-group">
+                    <label className="input-label form-label">Full Name</label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={fullName}
+                      placeholder="Enter your name"
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
+                  </div>
 
-  <div className="input-group">
-    <label className="input-label form-label">Email</label>
-    <input
-      type="email"
-      className="input"
-      value={email}
-      placeholder="Enter your email"
-      onChange={(e) => setEmail(e.target.value)}
-     
-    />
-  </div>
+                  <div className="input-group">
+                    <label className="input-label form-label">Email</label>
+                    <input
+                      type="email"
+                      className="input"
+                      value={email}
+                      placeholder="Enter your email"
+                      onChange={(e) => setEmail(e.target.value)}
 
-                     <hr className="my-4" />
+                    />
+                  </div>
 
-                {/* <h5 className="mb-3 fw-semibold text-center">
+                  <hr className="my-4" />
+
+                  {/* <h5 className="mb-3 fw-semibold text-center">
                   Change Password
                 </h5>
 
@@ -156,7 +191,20 @@ export default function page() {
                 </div>
 
                 <div className="text-center mt-4">
-                  <button type="submit" className="btn btn-dark px-5 py-2 rounded-pill">Save Changes</button>
+                  <button
+                    type="submit"
+                    className="btn btn-dark px-5 py-2 rounded-pill"
+                    disabled={saving}
+                  >
+                    {saving ? "Saving..." : "Save Changes"}
+                  </button>
+                  {statusMessage.text && (
+                    <p
+                      className={`mt-3 ${statusMessage.type === "error" ? "text-danger" : "text-success"}`}
+                    >
+                      {statusMessage.text}
+                    </p>
+                  )}
                 </div>
 
               </form>
@@ -166,7 +214,7 @@ export default function page() {
         </div>
       </div>
       <Footer />
-      
+
     </>
   )
 }

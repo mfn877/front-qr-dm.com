@@ -6,11 +6,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import Termandconditions from "@/components/Termandconditions";
+import { getToken } from "@/utils/storage";
+import Header2 from "@/components/Header2";
 
 export default function page() {
   return (
     <div>
-      <Header />
+      {getToken() ? <Header2 /> : <Header />}
       <div id="home-page" className="page active">
         <section
           className="hero banner_top"

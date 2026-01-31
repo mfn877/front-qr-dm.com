@@ -8,13 +8,14 @@ import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
 import PhoneField from "@/components/common/PhoneField";
+import { callLoginModal } from "@/utils/authModal";
 
 export default function VcardQR() {
   /* ================= CONTENT STATES ================= */
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-   const [CompanyName, setCompanyName] = useState("");
-    const [JobTitle, setJobTitle] = useState("");
+  const [CompanyName, setCompanyName] = useState("");
+  const [JobTitle, setJobTitle] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [org, setOrg] = useState("");
@@ -41,7 +42,7 @@ export default function VcardQR() {
 
   /* ================= VCARD VALUE ================= */
   const canGenerateVCard =
-    isValidFirstName  && isPhoneValid ;
+    isValidFirstName && isPhoneValid;
 
   const vcardValue = canGenerateVCard
     ? `BEGIN:VCARD
@@ -54,26 +55,10 @@ EMAIL:${cleanEmail}
 END:VCARD`
     : "";
 
-  /* ================= AUTH MODAL ================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/vcard");
     if (!canGenerateVCard) {
       Swal.fire({
         icon: "error",
@@ -111,45 +96,22 @@ END:VCARD`
           icon: "success",
           title: "QR Saved!",
           text: "Your vCard QR has been saved successfully.",
-        });
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/vcard");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/vcard");
+        return;
+      }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
-
-  /* ================= LOGIN SUCCESS FIX ================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -168,12 +130,12 @@ END:VCARD`
                 className="input"
                 placeholder=" First Name"
                 value={firstName}
-                 maxLength={30}
+                maxLength={30}
                 onChange={(e) => setFirstName(e.target.value)}
               />
               {firstName && !isValidFirstName && (
                 <p style={{ color: "red", fontSize: 12 }}>
-                    {firstName.length}/30 Please enter a valid first name!
+                  {firstName.length}/30 Please enter a valid first name!
                 </p>
               )}
             </div>
@@ -185,20 +147,20 @@ END:VCARD`
                 className="input"
                 placeholder="surname"
                 value={lastName}
-                 maxLength={30}
+                maxLength={30}
                 onChange={(e) => setLastName(e.target.value)}
               />
               {lastName && !isValidLastName && (
                 <p style={{ color: "red", fontSize: 12 }}>
-                   {lastName.length}/30 Please enter a valid last name!
+                  {lastName.length}/30 Please enter a valid last name!
                 </p>
 
               )}
             </div>
 
 
-               <div className="input-group">
-             <label className="input-label">Personal Information (optional)</label>
+            <div className="input-group">
+              <label className="input-label">Personal Information (optional)</label>
               <input
                 type="text"
                 className="input"
@@ -206,19 +168,19 @@ END:VCARD`
                 value={CompanyName}
                 onChange={(e) => setDateOfBirth(e.target.value)}
               />
-          </div>
+            </div>
 
             <div className="input-group">
               <label className="input-label">
-               Contact <RequiredStar />
+                Contact <RequiredStar />
               </label>
-             <PhoneField
-                               label="Phone Number"
-                               required
-                               value={phone}
-                               onChange={setPhone}
-                               />
-          
+              <PhoneField
+                label="Phone Number"
+                required
+                value={phone}
+                onChange={setPhone}
+              />
+
               {phone && !isPhoneValid && (
                 <p style={{ color: "red", fontSize: 12 }}>
                   Please enter a valid phone number!
@@ -243,24 +205,24 @@ END:VCARD`
               )}
             </div>
 
-       
 
-            
+
+
             <div className="input-group">
               <label className="input-label">Organization</label>
               <input
                 type="text"
                 className="input"
-                 placeholder="Organization"
+                placeholder="Organization"
                 value={org}
-                  maxLength={50}
+                maxLength={50}
                 onChange={(e) => setOrg(e.target.value)}
               />
             </div>
           </div>
         </div>
 
-        
+
         {/* ================= CUSTOMIZATION ================= */}
         <div className="card">
           <h3 style={{ marginBottom: "1.5rem" }}>Customization</h3>
@@ -359,7 +321,7 @@ END:VCARD`
 
               {logo ? (
                 <img src={logo} alt="Logo" style={{ maxWidth: "100%", maxHeight: "100%" }} />
-                    
+
               ) : (
                 <>
                   <svg

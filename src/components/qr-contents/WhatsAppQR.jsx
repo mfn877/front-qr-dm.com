@@ -7,6 +7,7 @@ import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
 import PhoneField from "@/components/common/PhoneField";
+import { callLoginModal } from "@/utils/authModal";
 
 export default function WhatsAppQR() {
   /* ================= CONTENT ================= */
@@ -33,33 +34,16 @@ export default function WhatsAppQR() {
   /* ================= QR VALUE ================= */
   const whatsappValue =
     isValid && digitsOnly
-      ? `https://wa.me/${digitsOnly}${
-          message ? `?text=${encodeURIComponent(message)}` : ""
-        }`
+      ? `https://wa.me/${digitsOnly}${message ? `?text=${encodeURIComponent(message)}` : ""
+      }`
       : "";
 
   const isFormValid = isValid && digitsOnly;
 
-  /* ================= AUTH MODAL ================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/whatsapp");
     if (!isFormValid) {
       Swal.fire({
         icon: "error",
@@ -94,45 +78,23 @@ export default function WhatsAppQR() {
           icon: "success",
           title: "QR Saved!",
           text: "Your WhatsApp QR has been saved successfully.",
-        });
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/whatsapp");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/whatsapp");
+        return;
+      }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
 
-  /* ================= LOGIN SUCCESS FIX ================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -145,12 +107,12 @@ export default function WhatsAppQR() {
               <label className="input-label">
                 {/* <RequiredStar /> */}
               </label>
-               <PhoneField
-                               label="Phone Number"
-                               required
-                               value={phone}
-                               onChange={setPhone}
-                               />
+              <PhoneField
+                label="Phone Number"
+                required
+                value={phone}
+                onChange={setPhone}
+              />
 
               {phone !== "" && !isValid && (
                 <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
@@ -161,31 +123,31 @@ export default function WhatsAppQR() {
 
             <div className="input-group">
               <label className="input-label">
-                Message 
+                Message
               </label>
               <textarea
                 className="input"
                 rows="4"
                 placeholder="Type your message..."
                 value={message}
-               onChange={(e) => {
-               const value = e.target.value;
-             if (value.length <= MAX_MESSAGE_LENGTH) {
-             setMessage(value);
-             }
-             }}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= MAX_MESSAGE_LENGTH) {
+                    setMessage(value);
+                  }
+                }}
               />
 
               <p
-  style={{
-    fontSize: "12px",
-    marginTop: "4px",
-    color: message.length >= MAX_MESSAGE_LENGTH ? "red" : "#666",
-    textAlign: "right",
-  }}
->
-  {message.length} / {MAX_MESSAGE_LENGTH}
-</p>
+                style={{
+                  fontSize: "12px",
+                  marginTop: "4px",
+                  color: message.length >= MAX_MESSAGE_LENGTH ? "red" : "#666",
+                  textAlign: "right",
+                }}
+              >
+                {message.length} / {MAX_MESSAGE_LENGTH}
+              </p>
 
             </div>
           </div>

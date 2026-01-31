@@ -4,12 +4,18 @@ import QRPreview2 from "../QRPreview2";
 import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
-import { getToken } from "@/utils/storage";
+import { getToken, isLoggedIn } from "@/utils/storage";
 import { isValidHttpsUrl } from "@/lib/urlValidation";
 import { useRouter } from "next/navigation";
+import { callLoginModal } from "@/utils/authModal";
 export default function DocumentQR() {
   /* ================= CONTENT ================= */
   const router = useRouter();
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push(`/login?redirect=${encodeURIComponent("/qr-generator/document")}`);
+    }
+  }, [router]);
   const [fileUrl, setFileUrl] = useState("");
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -28,24 +34,6 @@ export default function DocumentQR() {
   const [logo, setLogo] = useState(null);
 
   const [qrSvg, setQrSvg] = useState(null);
-
-  /* ================= AUTH MODAL ================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
 
   /* ================= FILE UPLOAD ================= */
   const handleFileUpload = async (e) => {
@@ -99,7 +87,7 @@ export default function DocumentQR() {
       }
     } catch (err) {
       if (err.response && err.response.status === 401) {
-        callLoginModal();
+        callLoginModal("/qr-generator/document");
         return;
       }
       console.error("Upload error:", err);
@@ -115,6 +103,7 @@ export default function DocumentQR() {
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/document");
     const isValidUrl = isValidHttpsUrl(fileUrl);
     if (!isValidUrl) {
       Swal.fire({
@@ -156,20 +145,7 @@ export default function DocumentQR() {
         }).then(() => router.push("/dashboard"));
 
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            openAuthModal("login");
-          } else if (result.isDenied) {
-            openAuthModal("signup");
-          }
-        });
+        callLoginModal("/qr-generator/document");
         return;
       }
 
@@ -182,6 +158,10 @@ export default function DocumentQR() {
       }
     } catch (err) {
       console.error(err);
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/document");
+        return;
+      }
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -192,23 +172,6 @@ export default function DocumentQR() {
     }
   };
 
-  /* ================= LOGIN SUCCESS FIX ================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>

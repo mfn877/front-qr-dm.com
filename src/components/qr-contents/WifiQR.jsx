@@ -6,6 +6,7 @@ import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
+import { callLoginModal } from "@/utils/authModal";
 
 export default function WifiQR() {
   const [ssid, setSsid] = useState("");
@@ -26,9 +27,9 @@ export default function WifiQR() {
      VALIDATION
   ======================= */
   const isSSIDEmpty = ssid.trim() === "";
-  const isSSIDValid = ssid.trim().length >= 3-32;
+  const isSSIDValid = ssid.trim().length >= 3 - 32;
   const isValidPassword =
-    security === "nopass" || password.trim().length >= 8-63;
+    security === "nopass" || password.trim().length >= 8 - 63;
 
   const isFormValid = isSSIDValid && !isSSIDEmpty && isValidPassword;
 
@@ -52,30 +53,13 @@ export default function WifiQR() {
     ? buildWifiQR({ ssid, password, security })
     : "";
 
-  /* ======================
-     AUTH MODAL
-  ======================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
+
 
   /* ======================
      SAVE QR
   ======================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/wifi");
     if (!isFormValid) {
       Swal.fire({
         icon: "error",
@@ -111,47 +95,22 @@ export default function WifiQR() {
           icon: "success",
           title: "QR Saved!",
           text: "Your WiFi QR has been saved successfully.",
-        });
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/wifi");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/wifi");
+        return;
+      }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
-
-  /* ======================
-     LOGIN SUCCESS FIX
-  ======================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>

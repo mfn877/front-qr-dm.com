@@ -3,6 +3,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QRTypes from "@/components/QRTypes";
 import Link from "next/link";
+import Header2 from "@/components/Header2";
+import { getToken } from "@/utils/storage";
 
 export default function Home() {
   const faqData = [
@@ -126,7 +128,7 @@ export default function Home() {
   ];
   return (
     <div>
-      <Header />
+      {getToken() ? <Header2 /> : <Header />}
       <div id="home-page" className="page active">
         <section
           className="hero"

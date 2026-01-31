@@ -1,4 +1,3 @@
-// src/components/QrCodeCard.jsx
 "use client";
 import { sanitizeSvg } from "@/utils/sanitizeSvg";
 import { truncate } from "@/utils/text";
@@ -36,7 +35,7 @@ export default function QrCodeCard({
 
       {/* Actions */}
       <div className="qr-actions">
-        <button className="action-btn">
+        {/* <button className="action-btn" onClick={onDownload}>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
@@ -46,9 +45,9 @@ export default function QrCodeCard({
             />
           </svg>
           Download
-        </button>
+        </button> */}
 
-        <button className="action-btn">
+        {/* <button className="action-btn" onClick={onEdit}>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
@@ -57,7 +56,7 @@ export default function QrCodeCard({
               d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
             />
           </svg>
-        </button>
+        </button> */}
 
         <button className="action-btn delete" onClick={onDelete}>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

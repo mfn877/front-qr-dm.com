@@ -5,6 +5,7 @@ import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
+import { callLoginModal } from "@/utils/authModal";
 
 export default function TextQR() {
   /* ================= CONTENT ================= */
@@ -25,26 +26,11 @@ export default function TextQR() {
   const TEXT_LIMIT = 600;
 
 
-  /* ================= AUTH MODAL ================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
+
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/text");
     if (!isFormValid) {
       Swal.fire({
         icon: "error",
@@ -78,19 +64,10 @@ export default function TextQR() {
           icon: "success",
           title: "QR Saved!",
           text: "Your Text QR has been saved successfully.",
-        });
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/text");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
@@ -98,40 +75,13 @@ export default function TextQR() {
       console.error(err);
       //401 Unauthorized
       if (err.response?.status === 401) {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/text");
       } else {
         Swal.fire("Error", "Something went wrong.", "error");
       }
     }
   };
 
-  /* ================= LOGIN SUCCESS FIX ================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -150,25 +100,25 @@ export default function TextQR() {
                 rows="5"
                 placeholder="Write your text here..."
                 value={text}
-                 onChange={(e) => {
-                if (e.target.value.length <= TEXT_LIMIT) {
-               setText(e.target.value);
-               }
-              }}
+                onChange={(e) => {
+                  if (e.target.value.length <= TEXT_LIMIT) {
+                    setText(e.target.value);
+                  }
+                }}
               />
 
               <p
-  style={{
-    fontSize: "12px",
-    textAlign: "right",
-    color: text.length === TEXT_LIMIT ? "red" : "#666",
-    marginTop: "4px",
-  }}
->
-  {text.length}/{TEXT_LIMIT} characters
-</p>
+                style={{
+                  fontSize: "12px",
+                  textAlign: "right",
+                  color: text.length === TEXT_LIMIT ? "red" : "#666",
+                  marginTop: "4px",
+                }}
+              >
+                {text.length}/{TEXT_LIMIT} characters
+              </p>
 
-              
+
             </div>
           </div>
         </div>

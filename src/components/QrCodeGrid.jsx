@@ -2,7 +2,7 @@ import QrCodeCard from "@/components/QrCodeCard";
 
 export default function QrCodeGrid({ qrs = [], onDelete }) {
     if (!qrs.length) {
-        return <p>No QR codes found.</p>;
+        return <p>Your saved QRs will appear here.</p>;
     }
 
     return (

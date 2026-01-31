@@ -8,7 +8,7 @@ import { logoutUser } from "@/lib/auth";
 export default function Header2() {
   const [userName, setUserName] = useState("");
   const user = secureLocalStorage.getItem("qr_user");
-  console.log("Header2 User:", user);
+  // console.log("Header2 User:", user);
   useEffect(() => {
     if (user?.name) {
       setUserName(user.name);
@@ -17,7 +17,7 @@ export default function Header2() {
   const handleLogout = async (e) => {
     e.preventDefault();
     await logoutUser();
-    window.location.href = "/login";
+    window.location.href = "/";
   };
   return (
     <header className="header">

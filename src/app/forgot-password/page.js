@@ -4,11 +4,13 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Swal from "sweetalert2";
 import api from "@/lib/api"; // axios instance
+//import router to redirect user after successful submission
+import { useRouter } from "next/navigation";
 
 export default function Page() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const router = useRouter();
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -27,10 +29,12 @@ export default function Page() {
       if (res.data?.status === "success") {
         Swal.fire(
           "Email Sent",
-          "A password reset link has been sent to your email.",
+          "A password OTP has been sent to your email.",
           "success"
         );
         setEmail("");
+        //redirect user to reset password page with email as query param
+        router.push(`/reset-password?email=${encodeURIComponent(email)}`);  
       } else {
         Swal.fire("Error", res.data?.message || "Unable to send email", "error");
       }

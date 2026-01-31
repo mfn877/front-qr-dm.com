@@ -19,11 +19,8 @@ export default function Header() {
                 <div className="header-buttons">
                     <Link href="/login" className="btn btn-ghost">Login</Link>
                     <Link href="/signup" className="btn btn-primary">Sign Up</Link>
-                    {/* {!login && <> <Link href="/login" className="btn btn-ghost">Login</Link>
-                        <Link href="/signup" className="btn btn-primary">Sign Up</Link></>}
-                    {login && <><Link className='d-lg-none d-block' href="/#nav-generator">QR Generate</Link>
-                        <Link className='d-lg-none d-block' href="/dashboard" id="nav-dashboard">Dashboard</Link></>} */}
                 </div>
+                
             </div>
         </header>
     )

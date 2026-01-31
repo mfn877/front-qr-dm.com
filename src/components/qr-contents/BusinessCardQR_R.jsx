@@ -102,7 +102,7 @@ END:VCARD`
               />
 {!isValidPhone && (
   <p style={{ color: "red", fontSize: 12 }}>
-    Invalid phone number (use +91XXXXXXXXXX)
+    Invalid phone number (use +XXXXXXXXXX)
   </p>
 )}
 

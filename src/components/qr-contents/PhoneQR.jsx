@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
 import PhoneField from "@/components/common/PhoneField";
 import "react-phone-input-2/lib/style.css";
+import { callLoginModal } from "@/utils/authModal";
 
 
 
@@ -37,30 +38,12 @@ export default function PhoneQR() {
     ? `tel:${phoneResult.cleanPhone}`
     : "";
 
-  /* ======================
-     AUTH MODAL
-  ======================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
 
   /* ======================
      SAVE QR
   ======================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/phone");
     if (!isValidPhone) {
       Swal.fire({
         icon: "error",
@@ -94,47 +77,23 @@ export default function PhoneQR() {
           icon: "success",
           title: "QR Saved!",
           text: "Your Phone QR has been saved successfully.",
-        });
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
+
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/phone");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/phone");
+        return;
+      }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
-
-  /* ======================
-     LOGIN SUCCESS FIX
-  ======================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -147,22 +106,22 @@ export default function PhoneQR() {
           <div className="card-body px-0 pb-0">
             <div className="input-group">
               <label className="input-label">
-       
+
               </label>
 
 
-                {/* ✅ FLAG + COUNTRY CODE INPUT */}
-          <div className="input-group">
-  <PhoneField
-    label="Phone Number"
-    required
-    value={phone}
-    onChange={setPhone}
-    />
-</div>
+              {/* ✅ FLAG + COUNTRY CODE INPUT */}
+              <div className="input-group">
+                <PhoneField
+                  label="Phone Number"
+                  required
+                  value={phone}
+                  onChange={setPhone}
+                />
+              </div>
 
               {phone && !isValidPhone && (
-                <p style={{ color: "red", fontSize: 12 ,marginTop: 4 }}>
+                <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
                   Enter a valid phone number.
                 </p>
               )}

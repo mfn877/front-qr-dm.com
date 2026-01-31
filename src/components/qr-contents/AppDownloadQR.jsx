@@ -7,6 +7,7 @@ import { isValidHttpsUrl } from "@/lib/urlValidation";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
+import { callLoginModal } from "@/utils/authModal";
 
 export default function AppDownloadQR() {
   /* ================= CONTENT ================= */
@@ -34,26 +35,10 @@ export default function AppDownloadQR() {
   /* ================= QR VALUE ================= */
   const qrValue = canGenerate ? finalUrl : "";
 
-  /* ================= AUTH MODAL ================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/app-download");
     if (!canGenerate) {
       Swal.fire({
         icon: "error",
@@ -90,45 +75,22 @@ export default function AppDownloadQR() {
           icon: "success",
           title: "QR Saved!",
           text: "Your App Download QR has been saved successfully.",
-        });
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/app-download");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/app-download");
+        return;
+      }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
-
-  /* ================= LOGIN SUCCESS FIX ================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -140,82 +102,82 @@ export default function AppDownloadQR() {
           </div>
 
           <div className="card-body px-0 pb-0">
-          <div className="input-group">
-          <label className="input-label">
-           App Name
-        </label>
-           <input
-             type="text"
-             className="input"
-             placeholder="Enter App Name"
-             value={appName}
-             onChange={(e) => setAppName(e.target.value)}
-          />
-        </div>
-</div>
-         
             <div className="input-group">
               <label className="input-label">
-                App Store Link (iOS)
+                App Name
               </label>
               <input
-                type="url"
+                type="text"
                 className="input"
-                placeholder="https://apps.apple.com/app/..."
-                value={ios}
-                onChange={(e) => setIos(e.target.value)}
+                placeholder="Enter App Name"
+                value={appName}
+                onChange={(e) => setAppName(e.target.value)}
               />
             </div>
-            {ios && !isValidHttpsUrl(ios) && (
-              <p style={{ color: "red", fontSize: 12 }}>
-                Invalid IOS App Store URL
-              </p>
-            )}
-
-            <div className="input-group">
-              <label className="input-label">
-                Google Play Link (Android)
-              </label>
-              <input
-                type="url"
-                className="input"
-                placeholder="https://play.google.com/store/apps/details?id=..."
-                value={android}
-                onChange={(e) => setAndroid(e.target.value)}
-              />
-            </div>
-            {android && !isValidHttpsUrl(android) && (
-              <p style={{ color: "red", fontSize: 12 }}>
-                Invalid Play Store URL
-              </p>
-            )}
-
-            <div className="input-group">
-              <label className="input-label">
-                Alternative APK Link (Optional)
-              </label>
-              <input
-                type="url"
-                className="input"
-                placeholder="https://example.com/app.apk"
-                value={apk}
-                onChange={(e) => setApk(e.target.value)}
-              />
-            </div>
-
-            {apk && !isValidHttpsUrl(apk) && (
-              <p style={{ color: "red", fontSize: 12 }}>
-                Please enter at least one app download link or Invalid APK URL
-              </p>
-            )}
-
-            {error && (
-              <p style={{ color: "red", fontSize: 12, marginTop: "8px" }}>
-                {error}
-              </p>
-            )}
           </div>
-    
+
+          <div className="input-group">
+            <label className="input-label">
+              App Store Link (iOS)
+            </label>
+            <input
+              type="url"
+              className="input"
+              placeholder="https://apps.apple.com/app/..."
+              value={ios}
+              onChange={(e) => setIos(e.target.value)}
+            />
+          </div>
+          {ios && !isValidHttpsUrl(ios) && (
+            <p style={{ color: "red", fontSize: 12 }}>
+              Invalid IOS App Store URL
+            </p>
+          )}
+
+          <div className="input-group">
+            <label className="input-label">
+              Google Play Link (Android)
+            </label>
+            <input
+              type="url"
+              className="input"
+              placeholder="https://play.google.com/store/apps/details?id=..."
+              value={android}
+              onChange={(e) => setAndroid(e.target.value)}
+            />
+          </div>
+          {android && !isValidHttpsUrl(android) && (
+            <p style={{ color: "red", fontSize: 12 }}>
+              Invalid Play Store URL
+            </p>
+          )}
+
+          <div className="input-group">
+            <label className="input-label">
+              Alternative APK Link (Optional)
+            </label>
+            <input
+              type="url"
+              className="input"
+              placeholder="https://example.com/app.apk"
+              value={apk}
+              onChange={(e) => setApk(e.target.value)}
+            />
+          </div>
+
+          {apk && !isValidHttpsUrl(apk) && (
+            <p style={{ color: "red", fontSize: 12 }}>
+              Please enter at least one app download link or Invalid APK URL
+            </p>
+          )}
+
+          {error && (
+            <p style={{ color: "red", fontSize: 12, marginTop: "8px" }}>
+              {error}
+            </p>
+          )}
+        </div>
+
 
         {/* ================= CUSTOMIZATION ================= */}
         <div className="card">

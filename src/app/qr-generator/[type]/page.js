@@ -1,10 +1,12 @@
 "use client";
 
 import Header from "@/components/Header";
+import Header2 from "@/components/Header2";
 import Footer from "@/components/Footer";
 import QRTypesSidebar from "@/components/QRTypesSidebar";
 import QRContent from "@/components/QRContent";
 import { useState, useEffect, use } from "react";
+import { getToken } from "@/utils/storage";
 
 export default function QRGeneratorPage({ params }) {
   // ✅ unwrap async params correctly
@@ -23,7 +25,7 @@ export default function QRGeneratorPage({ params }) {
 
   return (
     <>
-      <Header />
+    {getToken() ? <Header2 /> : <Header />}
 
       <div id="generator-page" className="page generator-page">
         <div className="container">

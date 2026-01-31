@@ -1,7 +1,3 @@
-//application/vnd.openxmlformats-officedocument.wordprocessingml.document
-//application/vnd.openxmlformats-officedocument.wordprocessingml.document.
-
-
 //src\app\dashboard\page.js
 "use client";
 import React, { useEffect, useState } from "react";
@@ -47,6 +43,10 @@ export default function page() {
       }
       setQrs(data.map(mapQrFromApi));
     } catch (e) {
+      if(e.status === 401){
+        router.replace("/login?redirect=/dashboard");
+        return;
+      }
       console.error("QR fetch failed", e);
     } finally {
       setLoading(false);
@@ -163,12 +163,12 @@ export default function page() {
                 gap: "1.5rem",
               }}
             >
-              <QrToolbar
+              {/* <QrToolbar
                 search={search}
                 onSearchChange={setSearch}
                 view={view}
                 onViewChange={setView}
-              />
+              /> */}
               <div
                 className={view === "grid" ? "qr-codes-grid" : "qr-codes-list"}
               >

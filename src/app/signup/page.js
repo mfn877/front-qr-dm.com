@@ -21,6 +21,42 @@ export default function Page() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const EyeIcon = ({ visible }) => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+      {!visible && <path d="M4 4l16 16" strokeLinecap="round" />}
+    </svg>
+  );
+
+  const passwordFieldStyles = {
+    position: "relative",
+    width: "100%",
+  };
+
+  const toggleButtonStyles = {
+    position: "absolute",
+    right: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    color: "#1A73E8",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -110,59 +146,57 @@ export default function Page() {
 
             <div className="input-group">
               <label className="input-label">Password</label>
-              <input
-                type={showPassword ? "text" : "password"}
-                className="input"
-                placeholder="••••••••"
-                autoComplete="new-password"
-                value={form.password}
-                onChange={(e) =>
-                  setForm({ ...form, password: e.target.value })
-                }
-                required
-              />
-                <span
-    onClick={() => setShowPassword(!showPassword)}
-    style={{
-      fontSize: "12px",
-      color: "#1A73E8",
-      cursor: "pointer",
-      float: "right",
-      marginTop: "4px",
-    }}
-  >
-    {showPassword ? "Hide" : "Show"}
-  </span> 
+              <div style={passwordFieldStyles}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="input"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
+                  required
+                  style={{ paddingRight: "40px" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={toggleButtonStyles}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  <EyeIcon visible={showPassword} />
+                </button>
+              </div>
             </div>
 
             <div className="input-group">
               <label className="input-label">Confirm Password</label>
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                className="input"
-                placeholder="••••••••"
-                autoComplete="new-password"
-                value={form.confirmPassword}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    confirmPassword: e.target.value,
-                  })
-                }
-                required
-              />
-               <span
-    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-    style={{
-      fontSize: "12px",
-      color: "#1A73E8",
-      cursor: "pointer",
-      float: "right",
-      marginTop: "4px",
-    }}
-  >
-    {showConfirmPassword ? "Hide" : "Show"}
-  </span>
+              <div style={passwordFieldStyles}>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="input"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  value={form.confirmPassword}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  required
+                  style={{ paddingRight: "40px" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={toggleButtonStyles}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  <EyeIcon visible={showConfirmPassword} />
+                </button>
+              </div>
             </div>
 
             <label
@@ -184,11 +218,11 @@ export default function Page() {
               />
               <span>
                 I agree to the{" "}
-                <Link href="/terms-and-conditions" style={{ color: "#1A73E8" }}>
+                <Link target="_blank" href="/terms-and-conditions" style={{ color: "#1A73E8" }}>
                   Terms of Service
                 </Link>{" "}
                 and{" "}
-                <Link href="/privacy-policy" style={{ color: "#1A73E8" }}>
+                <Link target="_blank" href="/privacy-policy" style={{ color: "#1A73E8" }}>
                   Privacy Policy
                 </Link>
               </span>

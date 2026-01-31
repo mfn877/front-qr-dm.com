@@ -5,6 +5,7 @@ import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
 import { getToken } from "@/utils/storage";
+import { callLoginModal } from "@/utils/authModal";
 
 export default function LocationQR() {
   /* ================= CONTENT ================= */
@@ -30,7 +31,7 @@ export default function LocationQR() {
   const longitudeNumber = Number(longitude);
 
   const isValidLocationUrl =
-  /^https?:\/\/.+/i.test(locationUrl.trim());
+    /^https?:\/\/.+/i.test(locationUrl.trim());
 
   const isValidLatitude =
     latitude.trim() === "" ||
@@ -61,26 +62,11 @@ export default function LocationQR() {
     return `https://www.google.com/maps?q=${latitude},${longitude}`;
   }, [latitude, longitude, isFormValid]);
 
-  /* ================= AUTH MODAL ================= */
-  const openAuthModal = (type = "login") => {
-    Swal.fire({
-      title: type === "login" ? "Login Required" : "Create Account",
-      html: `
-        <div style="height:420px;">
-          <iframe
-            src="/${type}"
-            style="width:100%;height:100%;border:none;border-radius:6px;"
-          ></iframe>
-        </div>
-      `,
-      showConfirmButton: false,
-      showCloseButton: true,
-      width: 520,
-    });
-  };
+
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
+    getToken() || callLoginModal("/qr-generator/location");
     if (!isFormValid) {
       Swal.fire({
         icon: "error",
@@ -116,45 +102,22 @@ export default function LocationQR() {
           icon: "success",
           title: "QR Saved!",
           text: "Your Location QR has been saved successfully.",
-        });
+          confirmButtonText: "OK",
+        }).then(() => router.push("/dashboard"));
       } else if (res?.data?.status === "unauthenticated") {
-        Swal.fire({
-          icon: "warning",
-          title: "Login Required",
-          text: "Please login or register to save QR codes.",
-          showDenyButton: true,
-          confirmButtonText: "Login",
-          denyButtonText: "Register",
-        }).then((result) => {
-          if (result.isConfirmed) openAuthModal("login");
-          if (result.isDenied) openAuthModal("signup");
-        });
+        callLoginModal("/qr-generator/location");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
       console.error(err);
+      if (err.status === 401) {
+        callLoginModal("/qr-generator/location");
+        return;
+      }
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
-
-  /* ================= LOGIN SUCCESS FIX ================= */
-  useEffect(() => {
-    const listener = (e) => {
-      if (e.origin !== window.location.origin) return;
-
-      if (e.data === "LOGIN_SUCCESS") {
-        const token = getToken();
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
-        }
-        Swal.close();
-      }
-    };
-
-    window.addEventListener("message", listener);
-    return () => window.removeEventListener("message", listener);
-  }, []);
 
   return (
     <>
@@ -200,44 +163,44 @@ export default function LocationQR() {
               )}
             </div>
 
-             <div className="input-group">
-             <label className="input-label">
-               Location Name (Optional)
+            <div className="input-group">
+              <label className="input-label">
+                Location Name (Optional)
               </label>
               <input
-               type="text"
-               className="input"
-               placeholder="India Gate, New Delhi"
-               value={placeName}
-               onChange={(e) => setPlaceName(e.target.value)}
+                type="text"
+                className="input"
+                placeholder="India Gate, New Delhi"
+                value={placeName}
+                onChange={(e) => setPlaceName(e.target.value)}
               />
-             {placeName !== "" && !isValidPlaceName && (
-            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
-             Please Enter a Valid Location Name !
-            </p>
-            )}
-           </div>
+              {placeName !== "" && !isValidPlaceName && (
+                <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+                  Please Enter a Valid Location Name !
+                </p>
+              )}
+            </div>
 
             <div className="input-group">
-            <label className="input-label">
-            Location URL (Optional)
-            </label>
-            <input
-             type="text"
-             className="input"
-             placeholder="https://maps.google.com/?q=India+Gate+New+Delhi"
-             value={locationUrl}
-             onChange={(e) => setLocationUrl(e.target.value)}
-             />
-            {locationUrl !== "" && !isValidLocationUrl && (
-            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
-             Please Enter a Valid Location URL !
-           </p>
-           )}
-           </div>
+              <label className="input-label">
+                Location URL (Optional)
+              </label>
+              <input
+                type="text"
+                className="input"
+                placeholder="https://maps.google.com/?q=India+Gate+New+Delhi"
+                value={locationUrl}
+                onChange={(e) => setLocationUrl(e.target.value)}
+              />
+              {locationUrl !== "" && !isValidLocationUrl && (
+                <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+                  Please Enter a Valid Location URL !
+                </p>
+              )}
+            </div>
 
-              </div>
-             </div>
+          </div>
+        </div>
 
         {/* ================= CUSTOMIZATION ================= */}
         <div className="card">

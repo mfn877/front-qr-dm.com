@@ -30,10 +30,10 @@ export default function page() {
 
       const user = secureLocalStorage.getItem("qr_user");
 
-      await api.post("/auth/change-password", {
-        userId: user.id,          // or email
-        currentPassword,
-        newPassword,
+      await api.post("change-password", {
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirmation: confirmPassword,
       });
 
       Swal.fire("Success", "Password updated successfully", "success");
