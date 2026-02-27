@@ -1,6 +1,16 @@
 import { isValidHttpsUrl } from "@/lib/urlValidation";
 
 export function validateAppDownload(ios, android, apk) {
+
+   // ✅ NEW: don't validate before typing
+  if (!ios && !android && !apk) {
+    return {
+      canGenerate: false,
+      error: "",
+      finalUrl: "",
+    };
+  }
+  
   const iosValid = ios ? isValidHttpsUrl(ios) : false;
   const androidValid = android ? isValidHttpsUrl(android) : false;
   const apkValid = apk ? isValidHttpsUrl(apk) : false;
@@ -17,13 +27,13 @@ export function validateAppDownload(ios, android, apk) {
   }
 
   // ❌ More than one valid link
-  if (validCount > 1) {
-    return {
-      canGenerate: false,
-      error: "Only ONE app link is allowed (iOS or Android or APK)",
-      finalUrl: "",
-    };
-  }
+  // if (validCount > 1) {
+  //   return {
+  //     canGenerate: false,
+  //     error: "Only ONE app link is allowed (iOS or Android or APK)",
+  //     finalUrl: "",
+  //   };
+  // }
 
   // ❌ One valid, but other fields filled with INVALID URLs
   if (

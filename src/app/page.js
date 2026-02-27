@@ -1,12 +1,54 @@
+"use client";
 import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import QRTypes from "@/components/QRTypes";
+import QRTypesR from "@/components/QRTypesR";
+import AdScriptSlot from "@/components/AdScriptSlot";
 import Link from "next/link";
 import Header2 from "@/components/Header2";
-import { getToken } from "@/utils/storage";
+import { getToken, isLoggedIn } from "@/utils/storage";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { fetchAdsSettings } from "@/services/settingsService";
+import { useQrTypesQuery } from "@/services/qrtypes";
+import { getCurrentUser } from "@/services/authService";
 
 export default function Home() {
+  const router = useRouter();
+  const [loggedInStatus, setLoggedInStatus] = useState(false);
+  const [ads, setAds] = useState({});
+  const {
+    data: qrTypes = [],
+    isLoading: qrTypesLoading,
+    error: qrTypesError,
+  } = useQrTypesQuery({
+    staleTime: 10 * 60 * 1000,
+  });
+  useEffect(() => {
+    if (isLoggedIn()) {
+      setLoggedInStatus(true);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadAds = async () => {
+      try {
+        const { values } = await fetchAdsSettings();
+        if (mounted) {
+          setAds(values || {});
+        }
+      } catch (error) {
+        console.error("Failed to load ads settings:", error);
+      }
+    };
+
+    loadAds();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const faqData = [
     {
       section: "General Questions",
@@ -126,40 +168,77 @@ export default function Home() {
       ],
     },
   ];
+
+  useEffect(() => {
+    const validateUser = async () => {
+      const token = getToken();
+      if (!token) return;
+
+      try {
+        // validate token with backend
+        await getCurrentUser();
+      } catch (error) {
+        // token invalid or expired → go login
+        removeToken();
+      }
+    };
+
+    validateUser();
+  }, [router]);
+  
   return (
     <div>
-      {getToken() ? <Header2 /> : <Header />}
+      {
+        loggedInStatus ? <Header2 /> : <Header />
+      }
       <div id="home-page" className="page active">
         <section
           className="hero"
           style={{
             background:
-              "linear-gradient(138.18deg, #eae8fd 0%, #fce5e6 94.44%)",
+              "linear-gradient(138.18deg,  #1b0c40 0%,  #1b0c40 94.44%)",
+           
           }}
         >
           <div className="container">
             <div className="row">
               <div className="col-md-7 align-self-center">
-                <h1>Create Smart QR Codes in Seconds</h1>
-                <p>
+                <h1 className="text-white">Create Smart QR Codes in Seconds</h1>
+                <p className="text-white">
                   QR DM is a fast and reliable QR code generator built for
                   personal, academic, and business use. Generate high-quality QR
                   codes, download them instantly, and share information
                   effortlessly with no technical skills required.{" "}
                 </p>
-                <Link className="btn btn-primary" href="/qr-generator/url">
+                <Link className="btn  home-gradient-btn" href="/qr-generator/url">
                   <i className="fa fa-qrcode me-1"></i> Create QR
                 </Link>
               </div>
-              <div className="col-md-5 mt-lg-0 mt-5">
-                <img className="w-100" src="/img/qr-code.svg" />
+              <div className="col-md-5 mt-lg-0 mt-5 align-self-center">
+                <img className="w-100" src="/img/bg1.png" />
               </div>
             </div>
           </div>
         </section>
-        <QRTypes />
+        {/* <AdScriptSlot
+          html={ads.ads_position_one}
+          className="ads-slot ads-slot-one"
+        /> */}
+        <QRTypesR
+          qrData={qrTypes}
+          loading={qrTypesLoading}
+          error={qrTypesError}
+        />
+        {/* <AdScriptSlot
+          html={ads.ads_position_two}
+          className="ads-slot ads-slot-two"
+        /> */}
         <section className="features-section">
           <div className="container">
+            <div className="section-header">
+              <h2>Features That Make QR Simple</h2>
+              <p> Explore powerful features designed to make QR code creation fast, flexible,and reliable for personal and business use. </p>
+            </div>
             <div className="features-grid">
               <div className="feature-card">
                 <div className="feature-icon">
@@ -177,6 +256,8 @@ export default function Home() {
                     />
                   </svg>
                 </div>
+
+
                 <h3>Dynamic QR</h3>
                 <p>
                   Update your QR code destination anytime, no reprints needed.{" "}
@@ -239,24 +320,16 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3>Multi-Link Pages</h3>
-                <p>Perfect for creators, influencers, and brands. </p>
+                <p>Perfect for creators, influencers, and brands.</p>
               </div>
               <div className="feature-card">
                 <div className="feature-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"
+                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0 0l-4-4m4 4l4-4" />
                   </svg>
                 </div>
+
                 <h3>High-Quality Downloads </h3>
                 <p>
                   Download transparent PNG files for digital use and SVG files
@@ -275,73 +348,72 @@ export default function Home() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth="1.5"
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                      d="M12 4a8 8 0 100 16 8 8 0 000-16z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M12 12l4-2"
                     />
                   </svg>
                 </div>
+
+
                 <h3>Fast and Free </h3>
                 <p>
                   Start creating QR codes instantly with no account required.{" "}
                 </p>
               </div>
               <div className="feature-card">
-       <div className="feature-icon">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.5"
-        d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.5"
-        d="M6 21v-2a6 6 0 0112 0v2"
-      />
-    </svg>
-  </div>
-  <h3>Password Protection</h3>
-  <p>
-    Secure your QR codes with passwords to control who can access your content.
-  </p>
-</div>
-<div className="feature-card">
-  <div className="feature-icon">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.5"
-        d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.5"
-        d="M6 21v-2a6 6 0 0112 0v2"
-      />
-    </svg>
-  </div>
-  <h3>Custom Branding & Design</h3>
-  <p>
-    Brands love consistency, and custom-looking QR codes feel more professional and trustworthy.
- 
-  </p>
-</div>
+                <div className="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"
+                      d="M12 11c1.657 0 3-1.343 3-3V7a3 3 0 10-6 0v1c0 1.657 1.343 3 3 3z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"
+                      d="M5 11h14a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2z" />
+                  </svg>
+                </div>
+
+                <h3>Password Protection</h3>
+                <p>
+                  Secure your QR codes with passwords to control who can access your content.
+                </p>
+              </div>
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M6 21v-2a6 6 0 0112 0v2"
+                    />
+                  </svg>
+                </div>
+                <h3>Custom Branding & Design</h3>
+                <p>
+                  Brands love consistency, and custom-looking QR codes feel more professional and trustworthy.
+                </p>
+              </div>
             </div>
           </div>
         </section>
+        {/* <AdScriptSlot
+          html={ads.ads_position_three}
+          className="ads-slot ads-slot-three"
+        /> */}
         <section className="cta-section">
           <div className="container">
             <img className="mb-3" src="/img/favicon.png" />

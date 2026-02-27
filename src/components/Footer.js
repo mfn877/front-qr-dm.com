@@ -42,7 +42,7 @@ export default function Footer() {
                     </div>
 
                     <div className="footer-bottom">
-                        © 2026 QR-DM. All rights reserved. Managed by <Link href="https://ipistis.com">iPistis</Link>.
+                        © 2026 QR-DM. All Rights Reserved. 
                     </div>
                 </div>
             </div>

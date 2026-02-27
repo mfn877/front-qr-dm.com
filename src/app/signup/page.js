@@ -1,13 +1,21 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import secureLocalStorage from "react-secure-storage";
-import { signupUser } from "@/services/authService";
+import {signupUser } from "@/services/authService";
+import { isLoggedIn } from "@/utils/storage";
+import { usePasswordValidator } from "@/utils/validator/password.services";
+import Passwordbar from "@/components/passwordBar/passwordbar";
+import Swal from "sweetalert2";
 
 export default function Page() {
   const router = useRouter();
-
+  useEffect(() => {
+    if (isLoggedIn()) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -15,6 +23,15 @@ export default function Page() {
     confirmPassword: "",
     agree: false,
   });
+
+  // password validator
+  const {
+    isValid: isPasswordValid,
+    validations,
+    percent,
+    color,
+    label,
+  } = usePasswordValidator(form.password);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -60,15 +77,23 @@ export default function Page() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    // Frontend validation
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
+    if (!isPasswordValid) {
+      Swal.fire({
+        icon: "warning",
+        title: "Password is not strong enough",
+        showConfirmButton: false,
+        timer: 1000,
+      });
       return;
     }
-
-    if (!form.agree) {
-      setError("You must agree to the Terms & Privacy Policy");
+    // Frontend validation
+    if (form.password !== form.confirmPassword) {
+      Swal.fire({
+        icon: "warning",
+        title: "Passwords do not match",
+        showConfirmButton: false,
+        timer: 1000,
+      })
       return;
     }
 
@@ -87,12 +112,18 @@ export default function Page() {
         secureLocalStorage.setItem("qr_logged_in", true);
         window.parent.postMessage("LOGIN_SUCCESS", "*");
         // Redirect after successful signup
+        Swal.fire({
+          icon: "success",
+          title: "Signup successful",
+          showConfirmButton: false,
+          timer: 1000,
+        });
         router.push("/dashboard");
       } else {
-        setError(res?.message || "Signup failed");
+        Swal.fire(res?.message || "Signup failed. Please try again.");
       }
     } catch (err) {
-      setError(
+      Swal.fire(
         err?.response?.data?.message ||
         "Signup failed. Please try again."
       );
@@ -153,8 +184,10 @@ export default function Page() {
                   placeholder="••••••••"
                   autoComplete="new-password"
                   value={form.password}
-                  onChange={(e) =>
+                  onChange={(e) => {
+
                     setForm({ ...form, password: e.target.value })
+                  }
                   }
                   required
                   style={{ paddingRight: "40px" }}
@@ -168,6 +201,7 @@ export default function Page() {
                   <EyeIcon visible={showPassword} />
                 </button>
               </div>
+
             </div>
 
             <div className="input-group">
@@ -198,6 +232,8 @@ export default function Page() {
                 </button>
               </div>
             </div>
+            <div className="col-12">{form.password && <Passwordbar {...{ percent, color, label, validations }} />}</div>
+           
 
             <label
               style={{
@@ -211,6 +247,7 @@ export default function Page() {
               <input
                 type="checkbox"
                 className="checkbox"
+                required
                 checked={form.agree}
                 onChange={(e) =>
                   setForm({ ...form, agree: e.target.checked })
@@ -228,11 +265,7 @@ export default function Page() {
               </span>
             </label>
 
-            {error && (
-              <p style={{ color: "red", marginBottom: "10px" }}>
-                {error}
-              </p>
-            )}
+            
 
             <button
               type="submit"
@@ -240,7 +273,7 @@ export default function Page() {
               style={{ width: "100%" }}
               disabled={loading}
             >
-              {loading ? "Creating Account..." : "Create Account"}
+              {loading ? <><span className="spinner-border spinner-border-sm me-2"></span> Creating Account </>: "Create Account"}
             </button>
           </form>
 
@@ -249,7 +282,7 @@ export default function Page() {
             <Link href="/login">Sign in</Link>
           </p>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

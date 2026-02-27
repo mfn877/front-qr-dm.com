@@ -49,7 +49,7 @@ export default function MultiLinkQR() {
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
@@ -193,9 +193,20 @@ export default function MultiLinkQR() {
     setLoading(true);
 
     try {
-      const res = await api.put(
-        `/qr-data/${updateQRID}`,
-        { file: qrSvg },
+       const payload = {
+        track: 1,
+        qrtype: qrTypeID, // 16
+        file: qrSvg,
+        content: buildContentPayload(),
+        design: {
+          qr_color: qrColor,
+          bg_color: bgColor,
+          size,
+          pattern,
+          eye_style: eyeStyle,
+        },
+      };
+     const res = await api.put( `/qr-data/${updateQRID}`, payload,
         {
           headers: {
             Accept: "application/json",
@@ -477,7 +488,7 @@ export default function MultiLinkQR() {
       </div>
 
       <QRPreview2
-        value={multiLinkURL}
+        value={!isQrTooLarge ? multiLinkURL : ""}
         qrColor={qrColor}
         bgColor={bgColor}
         size={size}
@@ -489,6 +500,7 @@ export default function MultiLinkQR() {
         updateQRID={updateQRID}
         qrtypeID={qrTypeID}
         newData={newData}
+        loading={loading}        
       />
     </>
   );

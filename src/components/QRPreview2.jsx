@@ -15,7 +15,8 @@ export default function QRPreview({
   onSvgReady,
   updateQRID,
   qrtypeID,
-  newData
+  newData,
+  loading
 }) {
   // console.log("QRPreview props:", { value, size, bgColor, qrColor, pattern, eyeStyle, logo,updateQRID });
   const [svgReady, setSvgReady] = useState(false);
@@ -120,6 +121,19 @@ export default function QRPreview({
     }
   };
 
+  const downloadJPEG = () => {
+    if (qr.current) {
+      qr.current.download({ extension: "jpeg" });
+    }
+  };
+
+  const downloadTransparentPNG = async () => {
+    if (!qr.current) return;
+    qr.current.update({ backgroundOptions: { color: "transparent" } });
+    await qr.current.download({ extension: "png" });
+    qr.current.update({ backgroundOptions: { color: bgColor } });
+  };
+
   const downloadSVG = () => {
     if (qr.current) {
       qr.current.download({ extension: "svg" });
@@ -149,28 +163,47 @@ export default function QRPreview({
         </div>
         {/* DOWNLOAD BUTTONS */}
         <div className="download-buttons">
-          <button
+          {/* <button
             className="btn btn-primary"
             style={{ width: "100%" }}
             onClick={downloadPNG}
             disabled={!hasValue && updateQRID < 2}
           >
             Download PNG
-          </button>
+          </button> */}
 
           <div className="download-grid">
             <button
-              className="btn btn-secondary"
+              className="btn btn-primary"
+                style={{ width: "100%" }}
               onClick={downloadSVG}
               disabled={!hasValue && updateQRID < 2}
             >
               SVG
             </button>
 
-            <button
+              <button
+            className="btn btn-primary"
+            style={{ width: "100%" }}
+            onClick={downloadJPEG}
+            disabled={!hasValue && updateQRID < 2}
+          >
+           JPEG
+          </button>
+
+            {/* <button
               className="btn btn-secondary"
-              onClick={downloadPNG}
+              onClick={downloadTransparentPNG}
               disabled={!hasValue && updateQRID < 2}
+            >
+              Transparent
+            </button> */}
+          </div>
+          <div className="col-md-12">
+             <button
+              className="btn btn-secondary w-100"
+              onClick={downloadTransparentPNG}
+               disabled={!hasValue && updateQRID < 2}
             >
               Transparent
             </button>
@@ -184,6 +217,9 @@ export default function QRPreview({
         disabled={!hasValue && !updateQRID}
         onClick={onSave}
       >
+        {
+          loading && <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span></>
+        }
         {updateQRID === 1 ? "Click to Generate/Save QR" : btnText}
       </button>
     </div>

@@ -15,10 +15,10 @@ export default function EmailQR() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const EMAIL_TOTAL_MAX = 254;
+  const EMAIL_TOTAL_MAX = 200;
   const EMAIL_LOCAL_MAX = 64;
   const EMAIL_DOMAIN_MAX = 255;
-  const MESSAGE_LIMIT = 500;
+  const MESSAGE_LIMIT = 400;
 
 
 
@@ -27,11 +27,13 @@ export default function EmailQR() {
   ======================= */
   const [qrColor, setQrColor] = useState("#000000");
   const [bgColor, setBgColor] = useState("#FFFFFF");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
+
+  const [loading, setLoading] = useState(false);
 
   const [qrSvg, setQrSvg] = useState(null);
 
@@ -64,6 +66,7 @@ export default function EmailQR() {
     }
 
     try {
+      setLoading(true);
       const payload = {
         track: 0,
         qrtype: 5, // EMAIL QR
@@ -90,7 +93,7 @@ export default function EmailQR() {
           title: "QR Saved!",
           text: "Your Email QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/email");
       } else {
@@ -103,6 +106,9 @@ export default function EmailQR() {
       }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -337,6 +343,7 @@ export default function EmailQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );

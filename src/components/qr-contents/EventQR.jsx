@@ -14,17 +14,19 @@ export default function EventQR() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [description, setDescription] = useState("");
+  const DESCRIPTION_LIMIT = 50;
+
 
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
   const [pattern, setPattern] = useState("square");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
 
   const [qrSvg, setQrSvg] = useState(null);
-
+  const [loading, setLoading] = useState(false);
   /* ================= VALIDATION ================= */
   const startDate = start ? new Date(start) : null;
   const endDate = end ? new Date(end) : null;
@@ -38,16 +40,36 @@ export default function EventQR() {
     start !== "" &&
     end !== "" &&
     isEndAfterStart;
+  description.length <= DESCRIPTION_LIMIT;
 
   /* ================= EVENT QR VALUE ================= */
-  const eventValue = isValid
-    ? `https://calendar.google.com/calendar/render?action=TEMPLATE
-&text=${encodeURIComponent(title)}
-&dates=${start.replace(/[-:]/g, "")}/${end.replace(/[-:]/g, "")}
-&details=${encodeURIComponent(description)}
-&location=${encodeURIComponent(location)}`
-    : "";
+//   const eventValue = isValid
+//     ? `https://calendar.google.com/calendar/render?action=TEMPLATE
+// &text=${encodeURIComponent(title)}
+// &dates=${start.replace(/[-:]/g, "")}/${end.replace(/[-:]/g, "")}
+// &details=${encodeURIComponent(description)}
+// &location=${encodeURIComponent(location)}`
+//     : "";
 
+const formatToICS = (dateStr) => {
+  // "2025-06-15T14:30" → "20250615T143000"
+  return dateStr.replace(/[-:]/g, "").replace("T", "T") + "00";
+};
+
+const eventValue = isValid
+  ? [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "BEGIN:VEVENT",
+      `SUMMARY:${title}`,
+      `LOCATION:${location}`,
+      `DTSTART:${formatToICS(start)}`,
+      `DTEND:${formatToICS(end)}`,
+      `DESCRIPTION:${description}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n")
+  : "";
 
 
   /* ================= SAVE QR ================= */
@@ -63,9 +85,10 @@ export default function EventQR() {
     }
 
     try {
+      setLoading(true);
       const payload = {
         track: 0,
-        qrtype: 12, // EVENT QR
+        qrtype: 13, // EVENT QR
         file: qrSvg,
         content: {
           title,
@@ -82,27 +105,31 @@ export default function EventQR() {
           eye_style: eyeStyle,
         },
       };
-
       const res = await api.post("/qr-data", payload);
 
       if (res?.data?.status_code === 1) {
+        setLoading(false);
         Swal.fire({
           icon: "success",
           title: "QR Saved!",
           text: "Your Event QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
       } else if (res?.data?.status === "unauthenticated") {
+        setLoading(false);
         callLoginModal("/qr-generator/event");
       } else {
+        setLoading(false);
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      setLoading(false);
       console.error(err);
       if (err.status === 401) {
         callLoginModal("/qr-generator/event");
         return;
       }
+      
       Swal.fire("Error", "Something went wrong.", "error");
     }
   };
@@ -179,15 +206,15 @@ export default function EventQR() {
                 rows="4"
                 placeholder="Event details"
                 value={description}
+                maxLength={DESCRIPTION_LIMIT}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
 
-            {!isValid && (
-              <p style={{ color: "red", fontSize: 12 }}>
-                Please fill all required fields
-              </p>
-            )}
+          <p style={{ fontSize: 12, color: description.length === DESCRIPTION_LIMIT ? "red" : "#666" }}>
+  {description.length}/{DESCRIPTION_LIMIT} characters
+</p>
+        
           </div>
         </div>
 
@@ -341,6 +368,7 @@ export default function EventQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );

@@ -7,7 +7,7 @@ import Swal from "sweetalert2";
 import { callLoginModal, useLoginSuccessListener } from "@/utils/authModal";
 import { isValidHttpsUrl } from "@/lib/urlValidation";
 import { useRouter } from "next/navigation";
-import { isLoggedIn } from "@/utils/storage";
+import { getToken, isLoggedIn } from "@/utils/storage";
 
 export default function PdfQR() {
   /* ================= AUTH ================= */
@@ -33,7 +33,7 @@ export default function PdfQR() {
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
@@ -51,6 +51,18 @@ export default function PdfQR() {
       setUploadedFile(null);
       return;
     }
+      const MAX_SIZE = 3 * 1024 * 1024; // 3MB
+    
+      if (file.size > MAX_SIZE) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Maximum allowed file size is 3MB.",
+        });
+    
+        e.target.value = "";
+        return;
+      }
 
     setError("");
     setUploading(true);
@@ -100,7 +112,6 @@ export default function PdfQR() {
         callLoginModal("/qr-generator/pdf");
         return;
       }
-      console.error("Upload error:", err);
       setError("Failed to upload file. Please try again.");
       setFileUrl("");
       setUploadedFile(null);
@@ -152,7 +163,7 @@ export default function PdfQR() {
           title: "QR Saved!",
           text: "Your QR code has been successfully saved to dashboard.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
 
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/pdf");
@@ -195,7 +206,7 @@ export default function PdfQR() {
               <input
                 type="file"
                 className="input"
-                accept=".pdf,.doc,.docx,.txt,.rtf,.ppt,.pptx,.xls,.xlsx"
+                accept=".pdf"
                 onChange={(e) => handleFileUpload(e)}
                 disabled={uploading}
               />
@@ -447,6 +458,7 @@ export default function PdfQR() {
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
         updateQRID={updateQRID}
+        loading={loading}
       />
     </>
   );

@@ -14,16 +14,18 @@ export default function TextQR() {
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
 
+  const [loading, setLoading] = useState(false);
+
   const [qrSvg, setQrSvg] = useState(null);
 
   const isFormValid = text.trim().length > 0;
-  const TEXT_LIMIT = 600;
+  const TEXT_LIMIT = 300;
 
 
 
@@ -41,6 +43,7 @@ export default function TextQR() {
     }
 
     try {
+      setLoading(true);
       const payload = {
         track: 0,
         qrtype: 8, // TEXT QR
@@ -65,7 +68,7 @@ export default function TextQR() {
           title: "QR Saved!",
           text: "Your Text QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/text");
       } else {
@@ -79,6 +82,9 @@ export default function TextQR() {
       } else {
         Swal.fire("Error", "Something went wrong.", "error");
       }
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -275,6 +281,7 @@ export default function TextQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );

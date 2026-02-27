@@ -15,11 +15,13 @@ export default function SmsQR() {
 
   const [qrColor, setQrColor] = useState("#000000");
   const [bgColor, setBgColor] = useState("#FFFFFF");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("square");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
+
+  const [loading, setLoading] = useState(false);
 
   const [qrSvg, setQrSvg] = useState(null);
 
@@ -61,6 +63,7 @@ export default function SmsQR() {
     }
 
     try {
+      setLoading(true);
       const payload = {
         track: 0,
         qrtype: 4, // SMS QR
@@ -86,7 +89,7 @@ export default function SmsQR() {
           title: "QR Saved!",
           text: "Your SMS QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/sms");
       } else {
@@ -99,6 +102,9 @@ export default function SmsQR() {
       }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -311,6 +317,7 @@ export default function SmsQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );

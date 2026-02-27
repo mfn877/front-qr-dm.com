@@ -10,7 +10,7 @@ const api = axios.create({
   },
 });
 
-// 🔐 ADD THIS INTERCEPTOR
+// ADD THIS INTERCEPTOR
 api.interceptors.request.use(
   (config) => {
     const token = getToken();

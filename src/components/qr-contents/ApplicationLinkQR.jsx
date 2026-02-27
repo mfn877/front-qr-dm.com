@@ -15,11 +15,13 @@ export default function ApplicationLinkQR() {
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
+
+  const [loading, setLoading] = useState(false);
 
   const [qrSvg, setQrSvg] = useState(null);
 
@@ -59,6 +61,7 @@ export default function ApplicationLinkQR() {
     }
 
     try {
+      setLoading(true);
       const payload = {
         track: 0,
         qrtype: 10, // APPLICATION LINK QR
@@ -83,7 +86,7 @@ export default function ApplicationLinkQR() {
           title: "QR Saved!",
           text: "Your Application Link QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/application-link");
       } else {
@@ -96,6 +99,9 @@ export default function ApplicationLinkQR() {
       }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -119,7 +125,7 @@ export default function ApplicationLinkQR() {
                 onChange={(e) => setAppUrl(e.target.value)}
               />
 
-              {!isValidUrl && (
+              {appUrl && !isValidUrl && (
                 <p style={{ color: "red", fontSize: 12, marginTop: "4px" }}>
                   PLEASE ENTER A VALID APPLICATION URL !
                 </p>
@@ -266,6 +272,7 @@ export default function ApplicationLinkQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );

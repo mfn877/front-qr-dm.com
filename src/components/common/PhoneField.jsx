@@ -10,19 +10,33 @@ export default function PhoneField({
   required = false,
   error = "",
 }) {
-  const [country, setCountry] = useState("");
+  // const [country, setCountry] = useState("");
 
-  // 🌍 Auto-detect country
-  useEffect(() => {
-    fetch("https://ipapi.co/json/")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.country_code) {
-          setCountry(data.country_code.toLowerCase());
-        }
-      })
-      .catch(() => {});
-  }, []);
+ 
+  // useEffect(() => {
+  //   const cachedCountry = localStorage.getItem("country_code");
+
+  //   if (cachedCountry) {
+  //     setCountry(cachedCountry);
+  //     return;
+  //   }
+
+  //   fetch("https://ipapi.co/json/")
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       if (data?.country_code) {
+  //         const country = data.country_code.toLowerCase();
+
+  //         // setCountry(country);
+  //         console.log("country", country);
+  //         localStorage.setItem("country_code", 'us'); // cache only on success
+  //       }
+  //     })
+  //     .catch(() => {
+  //       // silent fail — do not cache anything
+  //     });
+  // }, []);
+
 
   return (
     <div className="input-group">
@@ -30,23 +44,22 @@ export default function PhoneField({
         {label} {required && <span style={{ color: "red" }}>*</span>}
       </label>
 
-      <PhoneInput
-        country={country}
-        enableSearch
-        value={value}
-        onChange={(val) => {
-          // ✅ Always send normalized value (+ included)
-          const normalized = val ? `+${val}` : "";
-          onChange(normalized);
-        }}
-        inputStyle={{
-          width: "100%",
-          height: "42px",
-          fontSize: "14px",
-        }}
-        containerStyle={{ width: "100%" }}
-      />
-
+<PhoneInput
+  country="us"
+  enableSearch
+  className="phone-input"
+  value={value}
+  onChange={(val) => {
+    const normalized = val ? `+${val}` : "";
+    onChange(normalized);
+  }}
+  inputStyle={{
+    width: "100%",
+    height: "42px",
+    fontSize: "14px",
+  }}
+  containerStyle={{ width: "100%" }}
+/>
       {error && (
         <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
           {error}

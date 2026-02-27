@@ -27,7 +27,7 @@ export default function DocumentQR() {
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
@@ -45,6 +45,19 @@ export default function DocumentQR() {
       setUploadedFile(null);
       return;
     }
+      
+     const MAX_SIZE = 3 * 1024 * 1024; // 3MB
+
+  if (file.size > MAX_SIZE) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Maximum allowed file size is 3MB.",
+    });
+
+    e.target.value = "";
+    return;
+  }
 
     setError("");
     setUploading(true);
@@ -142,13 +155,12 @@ export default function DocumentQR() {
           title: "QR Saved!",
           text: "Your QR code has been successfully saved to dashboard.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
 
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/document");
         return;
       }
-
       else {
         Swal.fire({
           icon: "error",
@@ -188,13 +200,24 @@ export default function DocumentQR() {
               <input
                 type="file"
                 className="input"
-                accept=".doc,.docx,.txt,.rtf,.odt,.ppt,.pptx,.xls,.xlsx"
-                onChange={handleFileUpload}
+                accept="*/*"
+                onChange={(e) => handleFileUpload(e)}
+                disabled={uploading}
               />
 
+              {uploading && (
+                <p style={{ color: "blue", fontSize: 12, marginTop: "4px" }}>
+                  Uploading file...
+                </p>
+              )}
               {error && (
                 <p style={{ color: "red", fontSize: 12, marginTop: "4px" }}>
                   {error}
+                </p>
+              )}
+              {fileUrl && !error && !uploading && (
+                <p style={{ color: "green", fontSize: 12, marginTop: "4px" }}>
+                  File uploaded successfully!
                 </p>
               )}
             </div>
@@ -340,6 +363,7 @@ export default function DocumentQR() {
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
         updateQRID={updateQRID}
+        loading={loading}
       />
     </>
   );

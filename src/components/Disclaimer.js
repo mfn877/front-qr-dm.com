@@ -131,7 +131,7 @@ export default function DisclaimerPage() {
           rel="noopener noreferrer"
           style={{ color: "#2563eb" }}
         >
-          http://qr-dm.cm
+          http://qr-dm.com
         </a>
       </p>
     </div>

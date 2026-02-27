@@ -14,7 +14,7 @@ export default function AppDownloadQR() {
 
     const [bgColor, setBgColor] = useState("#FFFFFF");
     const [qrColor, setQrColor] = useState("#000000");
-    const [size, setSize] = useState(200);
+    const [size, setSize] = useState(310);
 
     const [pattern, setPattern] = useState("dots");
     const [eyeStyle, setEyeStyle] = useState("square");

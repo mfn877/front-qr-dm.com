@@ -1,24 +1,33 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import QRPreview from "../QRPreview";
 import { validatePhone } from "@/lib/phoneValidation";
 import { validateEmail } from "@/lib/emailValidation";
 import RequiredStar from "@/lib/starRequired";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
-import { getToken } from "@/utils/storage";
+import { getToken, isLoggedIn } from "@/utils/storage";
 import PhoneField from "@/components/common/PhoneField";
 import { callLoginModal } from "@/utils/authModal";
 
 export default function VcardQR() {
+  const router = useRouter();
+
   /* ================= CONTENT STATES ================= */
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [CompanyName, setCompanyName] = useState("");
   const [JobTitle, setJobTitle] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [org, setOrg] = useState("");
+  const [phones, setPhones] = useState([{ type: "main", number: "" }]);
+  const [emails, setEmails] = useState([""]);
+  const [websites, setWebsites] = useState([""]);
+  const [addresses, setAddresses] = useState([""]);
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [qrName, setQrName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [phonType, setPhoneType] = useState(["main"]);
+
 
   /* ================= VALIDATION ================= */
   const nameRegex = /^[A-Za-z]{2,}$/;
@@ -26,13 +35,22 @@ export default function VcardQR() {
   const isValidFirstName = nameRegex.test(firstName.trim());
   const isValidLastName = nameRegex.test(lastName.trim());
 
-  const { isValid: isPhoneValid, cleanPhone } = validatePhone(phone);
-  const { isValid: isEmailValid, cleanEmail } = validateEmail(email);
+  // Validate each phone entry individually; blank entries are considered valid (optional)
+  const phoneValidations = phones.map((p) =>
+    p.number.trim() ? validatePhone(p.number) : { isValid: true, cleanPhone: "" }
+  );
+  const hasInvalidPhone = phones.some(
+    (p, i) => p.number.trim() && !phoneValidations[i].isValid
+  );
+  const emailValidation = emails.map((item) => validateEmail(item));
+  const hasInvalidEmail = emails.some(
+    (item, index) => item.trim() && !emailValidation[index].isValid
+  );
 
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("square");
   const [eyeStyle, setEyeStyle] = useState("square");
@@ -40,22 +58,100 @@ export default function VcardQR() {
 
   const [qrSvg, setQrSvg] = useState(null);
 
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push(`/login?redirect=${encodeURIComponent("/qr-generator/business-card")}`);
+    }
+  }, [router]);
+
   /* ================= VCARD VALUE ================= */
   const canGenerateVCard =
-    isValidFirstName && isPhoneValid;
+    isValidFirstName && !hasInvalidPhone && !hasInvalidEmail;
+
+  const phoneLines = phones
+    .map((p, i) =>
+      p.number.trim() && phoneValidations[i].isValid
+        ? `TEL;TYPE=${p.type.toUpperCase()}:${phoneValidations[i].cleanPhone}`
+        : ""
+    )
+    .filter(Boolean)
+    .join("\n");
+
+  const emailLines = emails
+    .map((item, index) => {
+      if (!item.trim() || !emailValidation[index].isValid) return "";
+      return `EMAIL:${emailValidation[index].cleanEmail}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  const websiteLines = websites
+    .map((item) => (item.trim() ? `URL:${item.trim()}` : ""))
+    .filter(Boolean)
+    .join("\n");
+
+  const addressLines = addresses
+    .map((item) => (item.trim() ? `ADR:;;${item.trim()};;;;` : ""))
+    .filter(Boolean)
+    .join("\n");
 
   const vcardValue = canGenerateVCard
     ? `BEGIN:VCARD
 VERSION:3.0
 N:${lastName};${firstName}
 FN:${firstName} ${lastName}
-ORG:${org}
-TEL:${cleanPhone}
-EMAIL:${cleanEmail}
+ORG:${CompanyName}
+${phoneLines}
+${emailLines}
+${websiteLines}
+${addressLines}
 END:VCARD`
     : "";
 
 
+  const updateField = (setter, index, value) => {
+    setter((prev) => prev.map((item, i) => (i === index ? value : item)));
+  };
+
+  const addField = (setter) => {
+    setter((prev) => [...prev, ""]);
+  };
+
+  const removeField = (setter, index) => {
+    setter((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /* ── Phone helpers ── */
+  const addPhone = ( type ) =>
+    setPhones((prev) => [...prev, { type: type, number: "" }]);
+
+  const removePhone = (index) => {
+    setPhoneType((prev) => prev.filter((_, i) => i !== index));
+    setPhones((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  const updatePhoneNumber = (type, number) =>
+    setPhones((prev) =>
+      prev.map((p) => (p.type === type ? { ...p, number } : p))
+    );
+
+  const inputActionBtnStyle = {
+    position: "absolute",
+    right: 8,
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: 28,
+    height: 28,
+    border: "1px solid #d1d5db",
+    borderRadius: 6,
+    background: "#fff",
+    lineHeight: 1,
+    fontSize: 18,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
     getToken() || callLoginModal("/qr-generator/vcard");
@@ -69,6 +165,10 @@ END:VCARD`
     }
 
     try {
+      setLoading(true);
+      const primaryEmailIndex = emails.findIndex(
+        (item, index) => item.trim() && emailValidation[index].isValid
+      );
       const payload = {
         track: 0,
         qrtype: 6, // VCARD QR
@@ -76,9 +176,21 @@ END:VCARD`
         content: {
           first_name: firstName,
           last_name: lastName,
-          phone: cleanPhone,
-          email: cleanEmail,
-          organization: org,
+          phones: phones
+            .filter((p, i) => p.number.trim() && phoneValidations[i].isValid)
+            .map((p, i) => ({
+              type: p.type,
+              number: phoneValidations[phones.indexOf(p)].cleanPhone,
+            })),
+          email:
+            primaryEmailIndex > -1
+              ? emailValidation[primaryEmailIndex].cleanEmail
+              : "",
+          organization: CompanyName,
+          websites,
+          addresses,
+          emails,
+          qr_name: qrName,
         },
         design: {
           qr_color: qrColor,
@@ -97,7 +209,7 @@ END:VCARD`
           title: "QR Saved!",
           text: "Your vCard QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/vcard");
       } else {
@@ -110,6 +222,8 @@ END:VCARD`
       }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -128,14 +242,14 @@ END:VCARD`
               <input
                 type="text"
                 className="input"
-                placeholder=" First Name"
+                placeholder="First Name"
                 value={firstName}
                 maxLength={30}
                 onChange={(e) => setFirstName(e.target.value)}
               />
               {firstName && !isValidFirstName && (
                 <p style={{ color: "red", fontSize: 12 }}>
-                  {firstName.length}/30 Please enter a valid first name!
+                  {firstName.length}//30 Please enter a valid first name!
                 </p>
               )}
             </div>
@@ -154,70 +268,227 @@ END:VCARD`
                 <p style={{ color: "red", fontSize: 12 }}>
                   {lastName.length}/30 Please enter a valid last name!
                 </p>
-
               )}
             </div>
+
+            <div className="input-group">
+              <label className="input-label">Corporate Information (optional)</label>
+              <input
+                type="text"
+                className="input"
+                placeholder="Company Name"
+                value={CompanyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label className="input-label"></label>
+              <input
+                type="text"
+                className="input"
+                placeholder="Job Title"
+                value={JobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+              />
+            </div>
+
 
 
             <div className="input-group">
               <label className="input-label">Personal Information (optional)</label>
+
+              {/* Upload Image */}
+              <div className="input-group">
+                <label className="input-label upload-image-box"></label>
+                <input
+                  type="file"
+                  className="input"
+                  accept="image/*"
+                  onChange={(e) => console.log(e.target.files[0])}
+                />
+              </div>
+
+              {/* <span className="upload-text">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 5 17 10" />
+      <line x1="12" y1="5" x2="12" y2="15" />
+    </svg>
+    Upload Image
+  </span> */}
+
+
               <input
-                type="text"
+                type="date"
                 className="input"
-                placeholder="Date Of Birth"
-                value={CompanyName}
+                placeholder="mm.dd.yyyy"
+                value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
               />
+
+
             </div>
 
-            <div className="input-group">
+            <div className="form-group">
               <label className="input-label">
-                Contact <RequiredStar />
+                Contact (optional)
               </label>
-              <PhoneField
-                label="Phone Number"
-                required
-                value={phone}
-                onChange={setPhone}
-              />
+              <div className="">
+                <select
+                  className="form-select input"
+                  style={{ flex: 1 }}
+                  // value={phoneEntry.type}
+                  onChange={(e) => {
+                    // console.log(e.target.value);
+                    addPhone(e.target.value);
+                    setPhoneType((prev) => [...prev, e.target.value])
+                  }
+                  }
+                >
+                  <option value="main">Main</option>
+                  <option value="mobile">Mobile</option>
+                  <option value="work">Work</option>
+                  <option value="home">Home</option>
+                  <option value="office">Office</option>
+                  <option value="fax">Fax</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="support">Support</option>
+                  <option value="sales">Sales</option>
+                  <option value="other">Other</option>
+                </select>
 
-              {phone && !isPhoneValid && (
-                <p style={{ color: "red", fontSize: 12 }}>
-                  Please enter a valid phone number!
-                </p>
-              )}
-            </div>
+              </div>
+              {phonType.map((type, index) => (
+                <div key={`phone-${index}`} style={{ marginBottom: "0.75rem" }}>
 
-            <div className="input-group">
-              <label className="input-label">Email</label>
-              <input
-                type="email"
-                className="input"
-                placeholder="abc@example.com"
-                value={email}
-                maxLength={50}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              {email && !isEmailValid && (
-                <p style={{ color: "red", fontSize: 12 }}>
-                  Please enter a valid email!
-                </p>
-              )}
-            </div>
+                  {/* Phone number input */}
 
+                  <div key={`phone-${index}`} style={{ position: "relative", marginBottom: "1rem", width: "100%" }}>
+                    <PhoneField
+                      label={type}
+                      onChange={(value) => updatePhoneNumber(type, value)}
+                      
+                    />
+                    {index != 0 && <button
+                      type="button"
+                      style={{...inputActionBtnStyle, transform: "translateY(8%)"}}
+                      onClick={() =>
+                        removePhone(index)
+                      }
+                    > -
+                    </button>}</div>
+                  {/* Per-entry validation error — only shown after user types */}
+                  {/* {phones[index].number.trim() && !phoneValidations[index].isValid && (
+                    <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+                      Please enter a valid phone number!
+                    </p>
+                  )} */}
+                </div>
+              ))}
 
+              <div className="input-group">
+                <label className="input-label me-3 ">Email</label>
+                {emails.map((item, index) => (
+                  <div key={`email-${index}`} style={{ position: "relative", marginBottom: "0.5rem", width: "100%" }}>
 
+                    <input
+                      type="email"
+                      className="input"
+                      placeholder="abc@example.com"
+                      value={item}
+                      maxLength={50}
+                      onChange={(e) => updateField(setEmails, index, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      style={inputActionBtnStyle}
+                      onClick={() =>
+                        index === 0 ? addField(setEmails) : removeField(setEmails, index)
+                      }
+                    >
+                      {index === 0 ? "+" : "-"}
+                    </button>
+                    {item && !emailValidation[index].isValid && (
+                      <p style={{ color: "red", fontSize: 12 }}>
+                        Please enter a valid email!
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
 
-            <div className="input-group">
-              <label className="input-label">Organization</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="Organization"
-                value={org}
-                maxLength={50}
-                onChange={(e) => setOrg(e.target.value)}
-              />
+              <div className="input-group">
+                <label className="input-label">Website</label>
+                {websites.map((item, index) => (
+                  <div key={`website-${index}`} style={{ position: "relative", marginBottom: "0.5rem", width: "100%" }}>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="https://example.com"
+                      value={item}
+                      maxLength={100}
+                      style={{ paddingRight: 44, width: "100%", boxSizing: "border-box" }}
+                      onChange={(e) => updateField(setWebsites, index, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      style={inputActionBtnStyle}
+                      onClick={() =>
+                        index === 0 ? addField(setWebsites) : removeField(setWebsites, index)
+                      }
+                    >
+                      {index === 0 ? "+" : "-"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Address</label>
+                {addresses.map((item, index) => (
+                  <div key={`address-${index}`} style={{ position: "relative", marginBottom: "0.5rem", width: "100%" }}>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="enter address"
+                      value={item}
+                      maxLength={120}
+                      style={{ paddingRight: 44, width: "100%", boxSizing: "border-box" }}
+                      onChange={(e) => updateField(setAddresses, index, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      style={inputActionBtnStyle}
+                      onClick={() =>
+                        index === 0 ? addField(setAddresses) : removeField(setAddresses, index)
+                      }
+                    >
+                      {index === 0 ? "+" : "-"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Name Your QR (optional)</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="enter QR name"
+                  value={qrName}
+                  maxLength={50}
+                  onChange={(e) => setQrName(e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -243,12 +514,14 @@ END:VCARD`
                   value={qrColor}
                   onChange={(e) => setQrColor(e.target.value)}
                   className="color-picker"
+                  id="qr-color"
                 />
                 <input
                   type="text"
                   className="input"
                   value={qrColor}
                   onChange={(e) => setQrColor(e.target.value)}
+                  style={{ flex: 1 }}
                 />
               </div>
             </div>
@@ -261,12 +534,14 @@ END:VCARD`
                   value={bgColor}
                   onChange={(e) => setBgColor(e.target.value)}
                   className="color-picker"
+                  id="bg-color"
                 />
                 <input
                   type="text"
                   className="input"
                   value={bgColor}
                   onChange={(e) => setBgColor(e.target.value)}
+                  style={{ flex: 1 }}
                 />
               </div>
             </div>
@@ -360,6 +635,7 @@ END:VCARD`
           </div>
         </div>
       </div>
+      {/* ================= PREVIEW ================= */}
 
       {/* ================= PREVIEW ================= */}
       <QRPreview
@@ -372,6 +648,7 @@ END:VCARD`
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );

@@ -15,23 +15,48 @@ export default function WifiQR() {
 
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("square");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
 
+  const [loading, setLoading] = useState(false);
+
   const [qrSvg, setQrSvg] = useState(null);
 
-  /* ======================
-     VALIDATION
-  ======================= */
-  const isSSIDEmpty = ssid.trim() === "";
-  const isSSIDValid = ssid.trim().length >= 3 - 32;
-  const isValidPassword =
-    security === "nopass" || password.trim().length >= 8 - 63;
+  const [passwordTouched, setPasswordTouched] = useState(false);
 
-  const isFormValid = isSSIDValid && !isSSIDEmpty && isValidPassword;
+ 
+ 
+  useEffect(() => {
+  if (security === "nopass") {
+    setPassword("");
+  }
+}, [security]);
+ 
+
+  /* ======================
+   VALIDATION
+  ====================== */
+
+// SSID must be 3–32 characters
+const isSSIDValid =
+  ssid.trim().length >= 3 &&
+  ssid.trim().length <= 32;
+
+// Password validation
+let isValidPassword = true;
+
+if (security !== "nopass") {
+  isValidPassword =
+    password.trim().length >= 8 &&
+    password.trim().length <= 63;
+}
+
+// Final form validation
+const isFormValid = isSSIDValid && isValidPassword;
+
 
   /* ======================
      WIFI QR VALUE
@@ -70,6 +95,7 @@ export default function WifiQR() {
     }
 
     try {
+      setLoading(true);
       const payload = {
         track: 0,
         qrtype: 2, // WIFI QR
@@ -96,7 +122,7 @@ export default function WifiQR() {
           title: "QR Saved!",
           text: "Your WiFi QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/wifi");
       } else {
@@ -109,6 +135,9 @@ export default function WifiQR() {
       }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -128,6 +157,7 @@ export default function WifiQR() {
                 className="input"
                 placeholder="My WiFi Network"
                 value={ssid}
+                  autoComplete="off"
                 onChange={(e) => setSsid(e.target.value)}
               />
             </div>
@@ -141,13 +171,15 @@ export default function WifiQR() {
                 className="input"
                 placeholder="••••••••"
                 value={password}
+                autoComplete="new-password"
                 onChange={(e) => setPassword(e.target.value)}
               />
-              {!isValidPassword && (
-                <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
-                  Please enter at least 8 characters!
-                </p>
-              )}
+              {password.length > 0 && !isValidPassword && (
+  <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+    Please enter at least 8 characters!
+  </p>
+)}
+           
             </div>
 
             <div className="input-group">
@@ -293,6 +325,7 @@ export default function WifiQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );

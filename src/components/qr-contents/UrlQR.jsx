@@ -16,7 +16,7 @@ export default function UrlQR() {
   const [text, setText] = useState("");
   const [qrColor, setQrColor] = useState("#000000");
   const [bgColor, setBgColor] = useState("#FFFFFF");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("square");
   const [eyeStyle, setEyeStyle] = useState("square");
@@ -26,7 +26,7 @@ export default function UrlQR() {
   const [message, setMessage] = useState("");
   const [qrSvg, setQrSvg] = useState(null);
 
-  const MAX_URL_LENGTH = 500;
+  const MAX_URL_LENGTH = 200;
   const MAX_QR_CONTENT_LENGTH = 450;
   const MIN_QR_SIZE_FOR_LONG_TEXT = 250;
 
@@ -74,7 +74,7 @@ export default function UrlQR() {
           title: "QR Saved!",
           text: "Your QR code has been successfully saved to dashboard.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
 
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/url");
@@ -93,7 +93,7 @@ export default function UrlQR() {
         callLoginModal("/qr-generator/url");
         return;
       }
-      console.error(err);
+      // console.error(err);
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -130,7 +130,7 @@ export default function UrlQR() {
 
           <div className="card-body px-0 pb-0">
             <div className="input-group">
-              <label className="input-label">Enter URL   <RequiredStar /></label>
+              <label className="input-label">Enter URL<RequiredStar /></label>
               <input
                 type="text"
                 className="input"
@@ -364,6 +364,7 @@ export default function UrlQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );

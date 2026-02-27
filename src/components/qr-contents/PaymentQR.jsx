@@ -14,6 +14,7 @@ export default function PaymentQR() {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
 
   /* ================= OFFICIAL VALIDATION ================= */
   const upiRegex = /^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/;
@@ -23,17 +24,19 @@ export default function PaymentQR() {
 
   const isValidPaymentId =
     paymentType === "upi" ? upiRegex.test(paymentId) :
-      paymentType === "bank" ? bankRegex.test(paymentId) :
-        paymentType === "paypal" ? paypalRegex.test(paymentId) :
-          paymentType === "stripe" ? stripeRegex.test(paymentId) :
+    paymentType === "bank" ? bankRegex.test(paymentId) :
+    paymentType === "paypal" ? paypalRegex.test(paymentId) :
+    paymentType === "stripe" ? stripeRegex.test(paymentId) :
+    paymentType === "wise" ? paypalRegex.test(paymentId) :
+    paymentType === "payoneer" ? paypalRegex.test(paymentId) :
             false;
-
+console.log("",isValidPaymentId)
   const isValidAmount = amount === "" || Number(amount) > 0;
 
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
@@ -50,14 +53,28 @@ export default function PaymentQR() {
         ? `https://www.paypal.me/${paymentId}${amount ? `/${amount}` : ""}`
         : paymentType === "bank" && isValidPaymentId
           ? `BANK TRANSFER
+          ACCOUNT:${paymentId}
+          NAME:${name}
+          AMOUNT:${amount}
+          NOTE:${description}`
+          : paymentType === "stripe" && isValidPaymentId
+            ? `https://dashboard.stripe.com/${paymentId}`
+           
+             : paymentType === "wise" && isValidPaymentId
+    ? `WISE PAYMENT
 ACCOUNT:${paymentId}
 NAME:${name}
 AMOUNT:${amount}
 NOTE:${description}`
-          : paymentType === "stripe" && isValidPaymentId
-            ? `https://dashboard.stripe.com/${paymentId}`
-            : "";
 
+  : paymentType === "payoneer" && isValidPaymentId
+    ? `PAYONEER PAYMENT
+ACCOUNT:${paymentId}
+NAME:${name}
+AMOUNT:${amount}
+NOTE:${description}`
+
+  : "";
 
   /* ================= SAVE QR ================= */
   const handleSaveQR = async () => {
@@ -72,9 +89,10 @@ NOTE:${description}`
     }
 
     try {
+      setLoading(true);
       const payload = {
         track: 0,
-        qrtype: 14, // PAYMENT QR
+        qrtype: 15, // PAYMENT QR
         file: qrSvg,
         content: {
           payment_type: paymentType,
@@ -95,18 +113,20 @@ NOTE:${description}`
       const res = await api.post("/qr-data", payload);
 
       if (res?.data?.status_code === 1) {
+        setLoading(false);
         Swal.fire({
           icon: "success",
           title: "QR Saved!",
           text: "Your Payment QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/payment");
       } else {
         Swal.fire("Error", "Unable to save QR.", "error");
       }
     } catch (err) {
+      setLoading(false);
       if (err.status === 401) {
         callLoginModal("/qr-generator/payment");
         return;
@@ -138,11 +158,21 @@ NOTE:${description}`
                 <option value="bank">Bank Transfer</option>
                 <option value="paypal">PayPal</option>
                 <option value="stripe">Stripe</option>
+                <option value="wise">Wise</option>
+                <option value="payoneer">Payoneer</option>
               </select>
             </div>
 
             <div className="input-group">
-              <label className="input-label">UPI ID / Bank / Payment ID <RequiredStar /></label>
+            <label className="input-label">
+            {paymentType === "upi" && <>UPI ID <RequiredStar /></>}
+            {paymentType === "bank" && <>Bank Account <RequiredStar /></>}
+            {paymentType === "paypal" && <>PayPal Email <RequiredStar /></>}
+            {paymentType === "stripe" && <>Stripe ID <RequiredStar /></>}
+            {paymentType === "wise" && <>Wise Email <RequiredStar /></>}
+            {paymentType === "payoneer" && <>Payoneer Email <RequiredStar /></>}
+            {!paymentType && <>Payment ID <RequiredStar /></>}
+         </label>
               <input type="text" className="input" placeholder="example@upi or Bank Account / Payment ID" value={paymentId}
                 onChange={(e) => setPaymentId(e.target.value)} />
               {paymentId && !isValidPaymentId && (
@@ -351,7 +381,8 @@ NOTE:${description}`
         eyeStyle={eyeStyle}
         logo={logo}
         onSave={handleSaveQR}
-        onSvgReady={setQrSvg}
+        onSvgReady={setQrSvg}        
+        loading={loading} 
       />
     </>
   );

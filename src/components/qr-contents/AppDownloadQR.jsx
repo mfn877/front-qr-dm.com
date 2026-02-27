@@ -6,21 +6,32 @@ import { validateAppDownload } from "@/lib/appDownloadValidation";
 import { isValidHttpsUrl } from "@/lib/urlValidation";
 import api from "@/lib/api";
 import Swal from "sweetalert2";
-import { getToken } from "@/utils/storage";
+import { isLoggedIn } from "@/utils/storage";
 import { callLoginModal } from "@/utils/authModal";
+import { useRouter } from "next/navigation";
 
 export default function AppDownloadQR() {
+  const router = useRouter();
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push(`/login?redirect=${encodeURIComponent("/qr-generator/app-download")}`);
+    }
+  }, [router]);
+  const [updateQRID, setUpdateQRID] = useState(1);
+  const [downloadAppLink, setDownloadAppLink] = useState("");
+  const qrTypeID = 14; //For App Download QR
+  const [newData, setNewData] = useState(0);
   /* ================= CONTENT ================= */
   const [ios, setIos] = useState("");
   const [android, setAndroid] = useState("");
   const [apk, setApk] = useState("");
   const [appName, setAppName] = useState("");
-
+  const [loading, setLoading] = useState(false);
 
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
@@ -29,36 +40,40 @@ export default function AppDownloadQR() {
   const [qrSvg, setQrSvg] = useState(null);
 
   /* ================= VALIDATION ================= */
-  const { canGenerate, error, finalUrl } =
-    validateAppDownload(ios, android, apk);
+  const { canGenerate, error, finalUrl } = validateAppDownload(ios, android, apk);
 
-  /* ================= QR VALUE ================= */
-  const qrValue = canGenerate ? finalUrl : "";
+  const buildContentPayload = () => ({
+    app_name: appName.trim(),
+    ios_link: ios.trim(),
+    android_link: android.trim(),
+    apk_link: apk.trim(),
+    download_url: finalUrl || "",
+  });
 
-
-  /* ================= SAVE QR ================= */
-  const handleSaveQR = async () => {
-    getToken() || callLoginModal("/qr-generator/app-download");
-    if (!canGenerate) {
-      Swal.fire({
-        icon: "error",
-        title: "Invalid App Links",
-        text: "Please provide at least one valid app download link.",
-      });
+  const handleCreateQR = async () => {
+    if (!isLoggedIn()) {
+      callLoginModal("/qr-generator/app-download");
       return;
     }
 
+    if (!appName.trim()) {
+      Swal.fire("Error", "App Name is required to generate QR.", "error");
+      return;
+    }
+
+    if (!canGenerate) {
+      Swal.fire("Error", error || "Provide exactly one valid download link.", "error");
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const payload = {
-        track: 0,
-        qrtype: 13, // APP DOWNLOAD QR
+        track: 1,
+        qrtype: qrTypeID, // 14
         file: qrSvg,
-        content: {
-          ios,
-          android,
-          apk,
-          final_url: finalUrl,
-        },
+        content: buildContentPayload(),
         design: {
           qr_color: qrColor,
           bg_color: bgColor,
@@ -68,28 +83,85 @@ export default function AppDownloadQR() {
         },
       };
 
-      const res = await api.post("/qr-data", payload);
+      const res = await api.post("/qr-data", payload, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
 
       if (res?.data?.status_code === 1) {
-        Swal.fire({
-          icon: "success",
-          title: "QR Saved!",
-          text: "Your App Download QR has been saved successfully.",
-          confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
-      } else if (res?.data?.status === "unauthenticated") {
-        callLoginModal("/qr-generator/app-download");
+        setUpdateQRID(res.data?.data?.id); // 🔥 critical
+        setDownloadAppLink("https://qr-dm.com/scan/app-download/" + res.data?.data?.qid); // if API returns App Download URL
+        setNewData(1);
+        Swal.fire("Success", "App Download QR Created", "success");
       } else {
-        Swal.fire("Error", "Unable to save QR.", "error");
+        Swal.fire("Error", res?.data?.message || "Failed", "error");
       }
     } catch (err) {
-      if (err.status === 401) {
-        callLoginModal("/qr-generator/app-download");
-        return;
-      }
       console.error(err);
-      Swal.fire("Error", "Something went wrong.", "error");
+      Swal.fire("Error", "Something went wrong", "error");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  /* ================= SAVE QR ================= */
+  const handleUpdateQR = async () => {
+    if (updateQRID === 1) {
+      await handleCreateQR(); // EXACT SAME FLOW AS BUSINESS CARD
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const payload = {
+        track: 1,
+        qrtype: qrTypeID, // 14
+        file: qrSvg,
+        content: buildContentPayload(),
+        design: {
+          qr_color: qrColor,
+          bg_color: bgColor,
+          size,
+          pattern,
+          eye_style: eyeStyle,
+        },
+      };
+
+      const res = await api.put(
+        `/qr-data/${updateQRID}`,
+        payload,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (res?.data?.status_code === 1) {
+        setNewData(0);
+        Swal.fire("Updated", "App Download QR Updated", "success");
+      } else {
+        Swal.fire("Error", res?.data?.message || "Update failed", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Something went wrong", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleSaveQR = async () => {
+    if (!isLoggedIn()) {
+      callLoginModal("/qr-generator/app-download");
+      return;
+    }
+    await handleUpdateQR();
   };
 
   return (
@@ -104,7 +176,7 @@ export default function AppDownloadQR() {
           <div className="card-body px-0 pb-0">
             <div className="input-group">
               <label className="input-label">
-                App Name
+                App Name <RequiredStar />
               </label>
               <input
                 type="text"
@@ -167,7 +239,7 @@ export default function AppDownloadQR() {
 
           {apk && !isValidHttpsUrl(apk) && (
             <p style={{ color: "red", fontSize: 12 }}>
-              Please enter at least one app download link or Invalid APK URL
+              Invalid APK URL
             </p>
           )}
 
@@ -312,7 +384,7 @@ export default function AppDownloadQR() {
       </div>
 
       {/* ================= QR PREVIEW ================= */}
-      <QRPreview2
+      {/* <QRPreview2
         value={qrValue}
         qrColor={qrColor}
         bgColor={bgColor}
@@ -322,6 +394,22 @@ export default function AppDownloadQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
+      /> */}
+      <QRPreview2
+        value={downloadAppLink}
+        qrColor={qrColor}
+        bgColor={bgColor}
+        size={size}
+        pattern={pattern}
+        eyeStyle={eyeStyle}
+        logo={logo}
+        onSave={handleSaveQR}
+        onSvgReady={setQrSvg}
+        updateQRID={updateQRID}
+        qrtypeID={qrTypeID}
+        newData={newData}
+        loading={loading}
       />
     </>
   );

@@ -20,11 +20,13 @@ export default function WhatsAppQR() {
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("square");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
+
+  const [loading, setLoading] = useState(false);
 
   const [qrSvg, setQrSvg] = useState(null);
 
@@ -54,6 +56,7 @@ export default function WhatsAppQR() {
     }
 
     try {
+      setLoading(true);
       const payload = {
         track: 0,
         qrtype: 9, // WHATSAPP QR
@@ -79,7 +82,7 @@ export default function WhatsAppQR() {
           title: "QR Saved!",
           text: "Your WhatsApp QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/whatsapp");
       } else {
@@ -92,6 +95,9 @@ export default function WhatsAppQR() {
       }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -291,6 +297,7 @@ export default function WhatsAppQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );

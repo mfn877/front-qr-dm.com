@@ -11,6 +11,7 @@ import Swal from "sweetalert2";
 import { getToken, isLoggedIn } from "@/utils/storage";
 import { callLoginModal } from "@/utils/authModal";
 import { useRouter } from "next/navigation";
+import PhoneField from "@/components/common/PhoneField";
 
 
 export default function BusinessCardQR() {
@@ -28,76 +29,74 @@ export default function BusinessCardQR() {
   /* ================= CONTENT STATES ================= */
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
-  const [phone, setPhone] = useState("+");
+  const [phone, setPhone] = useState("+");  
+  const [landline, setLandline] = useState();
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [website, setWebsite] = useState("");
-  const [links, setLinks] = useState("")
   const [newData, setNewData] = useState(0);
-  const [instagram, setInstagram] = useState("");
-  const [facebook, setFacebook] = useState("");
-  const [linkedin, setLinkedin] = useState("");
-
-  const addLink = () => {
-    setLinks([...links, { type: "Website", url: "" }]);
-  };
-
-  const updateLink = (index, value) => {
-    const updated = [...links];
-    updated[index].url = value;
-    setLinks(updated);
-  };
+  const [socialLinks, setSocialLinks] = useState([{ label: "", url: "" }]);
 
   /* ================= VALIDATION ================= */
   const phoneResult = validatePhone(phone);
   const isValidPhone = phoneResult.isValid;
 
+  const landlineResult = validatePhone(landline);
+  const isValidLandline = landlineResult.isValid;
+
   const emailResult = validateEmail(email);
   const isValidEmail = emailResult.isValid;
 
+  const [isPhoneComplete, setIsPhoneComplete] = useState(false);
+
+
   const urlRegex = /^https:\/\/[^\s]+\.[^\s]+$/;
   const isValidWebsite = website === "" || urlRegex.test(website);
-
-  const isValidInstagram = instagram === "" || urlRegex.test(instagram);
-  const isValidFacebook = facebook === "" || urlRegex.test(facebook);
-  const isValidLinkedin = linkedin === "" || urlRegex.test(linkedin);
+  const socialLinkValidation = socialLinks.map(
+    (item) => item.url === "" || urlRegex.test(item.url)
+  );
 
 
   /* ================= CUSTOMIZATION ================= */
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
 
   const [qrSvg, setQrSvg] = useState(null);
 
-  const buildSocialLinksPayload = () => {
-    const list = [];
+  const updateSocialLink = (index, field, value) => {
+    setSocialLinks((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
 
-    if (facebook) list.push({ name: "facebook", url: facebook });
-    if (instagram) list.push({ name: "instagram", url: instagram });
-    if (linkedin) list.push({ name: "linkedin", url: linkedin });
-    if (website) list.push({ name: "website", url: website });
+  const addSocialLink = () => {
+    setSocialLinks((prev) => [...prev, { label: "", url: "" }]);
+  };
 
-    return list;
+  const removeSocialLink = (index) => {
+    setSocialLinks((prev) => prev.filter((_, i) => i !== index));
   };
 
   const buildContentPayload = () => ({
     name,
     title: role,
     phone: phoneResult.cleanPhone,
+    landline: landlineResult.cleanPhone,
     email: emailResult.cleanEmail,
     address,
     website,
-    social_links: [
-      instagram && { type: "instagram", url: instagram },
-      facebook && { type: "facebook", url: facebook },
-      linkedin && { type: "linkedin", url: linkedin },
-    ].filter(Boolean),
+    social_links: socialLinks
+      .filter((item, index) => item.url && socialLinkValidation[index])
+      .map((item) => ({
+        type: item.label.trim().toLowerCase() || "social",
+        url: item.url.trim(),
+      })),
   });
-  
+
 
 
   const handleCreateQR = async () => {
@@ -154,68 +153,115 @@ export default function BusinessCardQR() {
 
 
 
-  const handleUpdateQR = async () => {
-    if (updateQRID === 1) {
-      await handleCreateQR(); // same pattern as MultiLink
-      return;
-    }
+  // const handleUpdateQR = async () => {
+  //   if (updateQRID === 1) {
+  //     await handleCreateQR(); // same pattern as MultiLink
+  //     return;
+  //   }
 
-    setLoading(true);
+  //   setLoading(true);
 
-    try {
-      const res = await api.put(
-        `/qr-data/${updateQRID}`,
-        { file: qrSvg },
-        {
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
+  //   try {
+  //     const res = await api.put(
+  //       `/qr-data/${updateQRID}`,
+  //       { file: qrSvg },
+  //       {
+  //         headers: {
+  //           Accept: "application/json",
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
 
-      if (res?.data?.status_code === 1) {
-        setNewData(0);
-        // setBusinessCardURL("https://qr-dm.com/scan/business-card/" + res.data?.data?.qid); // if API returns QR URL
-        Swal.fire("Updated", "QR Updated Successfully", "success");
-      } else {
-        Swal.fire("Error", res?.data?.message || "Update failed", "error");
+  //     if (res?.data?.status_code === 1) {
+  //       setNewData(0);
+  //       // setBusinessCardURL("https://qr-dm.com/scan/business-card/" + res.data?.data?.qid); // if API returns QR URL
+  //       Swal.fire("Updated", "QR Updated Successfully", "success");
+  //     } else {
+  //       Swal.fire("Error", res?.data?.message || "Update failed", "error");
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     Swal.fire("Error", "Something went wrong", "error");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+const handleUpdateQR = async () => {
+  if (!updateQRID || updateQRID === 1) {
+    await handleCreateQR();
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const payload = {
+      track: 1,
+      qrtype: qrTypeID,
+      file: qrSvg,
+      content: buildContentPayload(),
+      design: {
+        qr_color: qrColor,
+        bg_color: bgColor,
+        size,
+        pattern,
+        eye_style: eyeStyle,
+      },
+    };
+
+    const res = await api.put(
+      `/qr-data/${updateQRID}`,
+      payload,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
       }
-    } catch (err) {
-      console.error(err);
-      Swal.fire("Error", "Something went wrong", "error");
-    } finally {
-      setLoading(false);
+    );
+
+    if (res?.data?.status_code === 1) {
+      setNewData(0);
+      Swal.fire("Updated", "QR Updated Successfully", "success");
+    } else {
+      Swal.fire("Error", res?.data?.message || "Update failed", "error");
     }
-  };
-
-
+  } catch (err) {
+    console.error(err);
+    Swal.fire("Error", "Something went wrong", "error");
+  } finally {
+    setLoading(false);
+  }
+};
 
 
   const qrSize = `${size}x${size}`;
 
   /* ================= QR VALUE ================= */
-  const businessValue =
+  const canPreviewBusinessCard =
     name.trim() !== "" &&
-      role.trim() !== "" &&
-      phone.trim() !== "" &&
-      email.trim() !== "" &&
-      website.trim() !== "" &&
+    role.trim() !== "" &&
+    phone.trim() !== "" &&
+    email.trim() !== "" &&
+    isValidPhone && 
+    isValidLandline &&
+    isValidEmail &&
+    isValidWebsite;
 
-      isValidPhone &&
-      isValidEmail &&
-      isValidWebsite
-      ? `BEGIN:VCARD
+  const businessValue = canPreviewBusinessCard
+    ? `BEGIN:VCARD
 VERSION:3.0
 FN:${name}
 TITLE:${role}
 TEL:${phoneResult.cleanPhone}
+TEL;TYPE=work,voice:${landlineResult.cleanPhone}
 EMAIL:${emailResult.cleanEmail}
-ADR:${address}
-URL:${website}
-
+${address.trim() ? `ADR:${address}` : ""}
+${website.trim() ? `URL:${website}` : ""}
 END:VCARD`
-      : "";
+    : "";
 
 
   /* ================= SAVE QR ================= */
@@ -255,19 +301,28 @@ END:VCARD`
             </div>
 
             <div className="input-group">
-              <label className="input-label">Phone <RequiredStar /></label>
-              <input
-                type="text"
-                className="input"
-                placeholder="+91XXXXXXXXXX"
+              {/* <label className="input-label">Phone <RequiredStar /></label> */}
+              <PhoneField
+                label="Phone Number"
+                required
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={setPhone}
               />
-              {!isValidPhone && (
-                <p style={{ color: "red", fontSize: 12 }}>
-                  Invalid phone number (use +XXXXXXXXXX)
+
+              {isPhoneComplete && !isValidPhone && (
+                <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+                  Enter a valid phone number.
                 </p>
               )}
+
+            </div>
+              <div className="input-group">
+              {/* <label className="input-label">Phone <RequiredStar /></label> */}
+              <PhoneField
+                label="Landline Number"
+                value={landline}
+                onChange={setLandline}
+              />
 
             </div>
 
@@ -280,9 +335,10 @@ END:VCARD`
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              {!isValidEmail && (
+              {email && !isValidEmail && (
                 <p style={{ color: "red", fontSize: 12 }}>Invalid email</p>
               )}
+
             </div>
 
             <div className="input-group">
@@ -297,7 +353,7 @@ END:VCARD`
             </div>
 
             <div className="input-group">
-              <label className="input-label">Website <RequiredStar /></label>
+              <label className="input-label">Website</label>
               <input
                 type="url"
                 className="input"
@@ -305,64 +361,82 @@ END:VCARD`
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
               />
-              {!isValidWebsite && (
+              {website && !isValidWebsite && (
                 <p style={{ color: "red", fontSize: 12 }}>
                   Use https://example.com
                 </p>
               )}
+
             </div>
 
             <div className="input-group">
               <label className="input-label">
-                Social Media Links <RequiredStar />
+                Social Media Links
               </label>
-              <div className="input-group">
-                <label className="input-label">Instagram </label>
-                <input
-                  type="url"
-                  className="input"
-                  placeholder="https://instagram.com/username"
-                  value={instagram}
-                  onChange={(e) => setInstagram(e.target.value)}
-                />
-                {!isValidInstagram && (
-                  <p style={{ color: "red", fontSize: 12 }}>
-                    Use https://instagram.com/username
-                  </p>
-                )}
-              </div>
+              {socialLinks.map((item, index) => (
+                <div
+                  key={`social-link-${index}`}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 2fr",
+                    gap: "0.5rem",
+                    alignItems: "start",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Label (e.g. Instagram)"
+                    value={item.label}
+                    onChange={(e) => updateSocialLink(index, "label", e.target.value)}
+                  />
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="url"
+                      className="input"
+                      placeholder="https://instagram.com/username"
+                      value={item.url}
+                      onChange={(e) => updateSocialLink(index, "url", e.target.value)}
+                      style={index > 0 ? { paddingRight: 44 } : undefined}
+                    />
+                    {index > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => removeSocialLink(index)}
+                        style={{
+                          position: "absolute",
+                          right: 8,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          width: 32,
+                          height: 32,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 6,
+                          background: "#fff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        -
+                      </button>
+                    )}
+                    {!socialLinkValidation[index] && (
+                      <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+                        Use https://example.com
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
 
-              <div className="input-group">
-                <label className="input-label">Facebook </label>
-                <input
-                  type="url"
-                  className="input"
-                  placeholder="https://facebook.com/username"
-                  value={facebook}
-                  onChange={(e) => setFacebook(e.target.value)}
-                />
-                {!isValidFacebook && (
-                  <p style={{ color: "red", fontSize: 12 }}>
-                    Use https://facebook.com/username
-                  </p>
-                )}
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">LinkedIn </label>
-                <input
-                  type="url"
-                  className="input"
-                  placeholder="https://linkedin.com/in/username"
-                  value={linkedin}
-                  onChange={(e) => setLinkedin(e.target.value)}
-                />
-                {!isValidLinkedin && (
-                  <p style={{ color: "red", fontSize: 12 }}>
-                    Use https://linkedin.com/in/username
-                  </p>
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={addSocialLink}
+                className="btn btn-outline-primary"
+                style={{ marginTop: "0.25rem", width: "fit-content" }}
+              >
+                + Add social media
+              </button>
 
 
 
@@ -501,6 +575,8 @@ END:VCARD`
         onSvgReady={setQrSvg}
         updateQRID={updateQRID}
         newData={newData}
+        qrTypeID={qrTypeID}
+        loading={loading}
       />
     </>
   );

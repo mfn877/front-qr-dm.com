@@ -20,26 +20,25 @@ export default function page() {
           style={{
             background:
               "linear-gradient(138.18deg, #eae8fd 0%, #fce5e6 94.44%)",
-              paddingTop: 20, paddingBottom: 20
+            paddingTop: 20, paddingBottom: 20
           }}
         >
           <div className="container">
             <div className="row">
-              <div className="col-md-7 order-lg-1 order-2 align-self-center">
+              <div className="col-md-12 order-lg-1 order-2 align-self-center text-center">
                 <h1 className="mb-0">Disclaimer</h1>
-                
-                
+
               </div>
-              <div className="col-md-5 order-lg-2 order-1 text-center">
+              {/* <div className="col-md-5 order-lg-2 order-1 text-center">
                 <img src="img/disclaimer.png" />
-              </div>
+              </div> */}
             </div>
           </div>
         </section>
         <section className="features-section content-section">
-         
-           <DisclaimerPage />
-         
+
+          <DisclaimerPage />
+
         </section>
       </div>
       <Footer />

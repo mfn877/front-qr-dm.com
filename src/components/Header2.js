@@ -43,7 +43,16 @@ export default function Header2() {
                 className="user-avatar me-2"
                 alt="User"
               /> */}
-              <span className="user-name">
+              <span
+                className="user-name"
+                style={{
+                  display: "inline-block",
+                  maxWidth: "100px", 
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {userName || "User"}
               </span>
             </button>
@@ -55,7 +64,7 @@ export default function Header2() {
               </li>
               <li>
                 <a className="dropdown-item" href="/settings">
-                  Settings
+                  Reset Password
                 </a>
               </li>
               <li>

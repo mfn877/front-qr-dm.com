@@ -2,16 +2,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import axios from "axios";
 import api from "@/lib/api";
+import Link from "next/link";
+import Powredbybrand from "@/components/powredbybrand";
 export default function Page() {
   const { slug } = useParams();
   const [qrData, setQrData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const getSocialLink = (type) =>
-    content?.social_links?.find(
-      (s) => s.type?.toLowerCase() === type
-    )?.url;
   useEffect(() => {
     if (!slug) return;
 
@@ -31,10 +28,13 @@ export default function Page() {
   }
 
   const content = qrData?.content || {};
-  const links = content?.links || [];
+  const socialLinks = Array.isArray(content?.social_links)
+    ? content.social_links.filter((item) => item?.url)
+    : [];
+  const mapUrl = content?.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(content.address)}`
+    : "";
 
-  const findLink = (name) =>
-    links.find((l) => l.name?.toLowerCase() === name)?.url;
   /* COMPONENTS */
   const Contact = ({ icon, label, value }) => (
     <div className="list-item" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
@@ -49,64 +49,88 @@ export default function Page() {
   );
 
   /* SVG ICONS */
-  const ClockIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="10" cy="10" r="8" /><path d="M10 5v5l3 2" /></svg>);
-  const LocationIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M10 2a6 6 0 0 1 6 6c0 4-6 10-6 10S4 12 4 8a6 6 0 0 1 6-6z" /><circle cx="10" cy="8" r="2" /></svg>);
-  const GoogleIcon = () => (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 48 48"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.7 1.22 9.18 3.6l6.85-6.85C35.9 2.38 30.4 0 24 0 14.6 0 6.48 5.38 2.56 13.22l7.98 6.19C12.48 13.02 17.78 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.1 24.5c0-1.63-.15-3.2-.42-4.72H24v9.04h12.42c-.54 2.9-2.18 5.36-4.66 7.02l7.22 5.61C43.94 37.36 46.1 31.4 46.1 24.5z" />
-      <path fill="#FBBC05" d="M10.54 28.41c-.5-1.48-.78-3.06-.78-4.66s.28-3.18.78-4.66l-7.98-6.19C.92 16.48 0 20.12 0 24s.92 7.52 2.56 11.09l7.98-6.68z" />
-      <path fill="#34A853" d="M24 48c6.4 0 11.78-2.12 15.7-5.76l-7.22-5.61c-2 1.34-4.56 2.14-8.48 2.14-6.22 0-11.52-3.52-13.46-8.36l-7.98 6.68C6.48 42.62 14.6 48 24 48z" />
-    </svg>
-  );
+const ClockIcon = () => (
+  <i className="bi bi-clock-fill  fs-5"></i>
+);
 
-  const ArrowIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 10h10" /><path d="M11 6l4 4-4 4" /></svg>);
-  const GridIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="6" height="6" /><rect x="11" y="3" width="6" height="6" /><rect x="3" y="11" width="6" height="6" /><rect x="11" y="11" width="6" height="6" /></svg>);
-  const UserIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="10" cy="6" r="3" /><path d="M4 18c0-3 12-3 12 0" /></svg>);
-  const GlobeIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="10" cy="10" r="8" /><path d="M2 10h16" /><path d="M10 2a12 12 0 0 1 0 16" /></svg>);
-  const PhoneIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 2l4 2-2 4c2 4 4 6 8 8l4-2 2 4c-8 4-16-4-16-12z" /></svg>);
-  const MailIcon = () => (<svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="16" height="12" /><path d="M2 4l8 6 8-6" /></svg>);
-  const FacebookIcon = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M14 9h3V6h-3c-2.76 0-5 2.24-5 5v2H7v3h2v6h3v-6h3l1-3h-4v-2c0-.55.45-1 1-1z"
-        fill="#1877F2"
+const LocationIcon = () => (
+  <i className="bi bi-geo-alt-fill  fs-5"></i>
+);
+
+const ArrowIcon = () => (
+  <i className="bi bi-arrow-right-circle-fill  fs-5"></i>
+);
+
+const GridIcon = () => (
+  <i className="bi bi-grid-fill  fs-5"></i>
+);
+
+const UserIcon = () => (
+  <i className="bi bi-person-fill  fs-5"></i>
+);
+
+const GlobeIcon = () => (
+  <i className="bi bi-globe2  fs-5"></i>
+);
+
+const PhoneIcon = () => (
+  <i className="bi bi-telephone-fill  fs-5"></i>
+);
+
+ const LandlineIcon = () => (<img src="/images/land-line.svg" width="20" height="20" />);
+
+const MailIcon = () => (
+  <i className="bi bi-envelope-fill fs-5"></i>
+);
+  const DefaultSocialIcon = () => <GlobeIcon />;
+
+  const getFaviconUrl = (rawUrl) => {
+    try {
+      const parsed = new URL(rawUrl);
+      return `https://www.google.com/s2/favicons?sz=128&domain_url=${encodeURIComponent(
+        parsed.origin
+      )}`;
+    } catch {
+      return "";
+    }
+  };
+
+  const getSocialMeta = (type) => {
+    const normalized = (type || "").toLowerCase().trim();
+    if (normalized === "google") return { label: "Google Review" };
+    if (normalized === "facebook") return { label: "Facebook" };
+    if (normalized === "instagram") return { label: "Instagram" };
+    if (normalized === "x" || normalized === "twitter") return { label: "X" };
+    if (normalized === "linkedin") return { label: "LinkedIn" };
+    if (normalized === "twitch") return { label: "Twitch" };
+    return {
+      label: normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "Social",
+    };
+  };
+
+  const WebsiteIcon = ({ url }) => {
+    const [iconFailed, setIconFailed] = useState(false);
+    const faviconUrl = getFaviconUrl(url);
+
+    if (!faviconUrl || iconFailed) {
+      return <DefaultSocialIcon />;
+    }
+
+    return (
+      <img
+        src={faviconUrl}
+        alt="website icon"
+        width="22"
+        height="22"
+        style={{ display: "block", borderRadius: 4 }}
+        onError={() => setIconFailed(true)}
       />
-    </svg>
-  );
-  const InstagramIcon = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="3" width="18" height="18" rx="5" stroke="#E1306C" strokeWidth="2" />
-      <circle cx="12" cy="12" r="4" stroke="#E1306C" strokeWidth="2" />
-      <circle cx="17" cy="7" r="1.2" fill="#E1306C" />
-    </svg>
-  );
-  const XIcon = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M4 4l7.5 9.5L4 20h3.5l5.5-5.8L17.5 20H21l-8-10 7-6h-3.5L12.5 8.7 7.5 4H4z"
-        fill="#000000"
-      />
-    </svg>
-  );
-  const LinkedinIcon = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <rect x="2" y="2" width="20" height="20" rx="3" fill="#0A66C2" />
-      <path d="M7 10v7" stroke="#fff" strokeWidth="2" />
-      <circle cx="7" cy="7" r="1" fill="#fff" />
-      <path d="M11 10v7" stroke="#fff" strokeWidth="2" />
-      <path d="M11 13c0-2 3-2 3 0v4" stroke="#fff" strokeWidth="2" />
-    </svg>
-  );
+    );
+  };
 
   return (
     <>
-      <div className="page">
+      <div className="page" >
         {/* HEADER */}
         <div className="header">
           <h1>Digital Business Card Data</h1>
@@ -117,9 +141,9 @@ export default function Page() {
           <p>{content?.title || ""}</p>
           {/* <button>View</button> */}
         </div>
-        <div className="container-fluid">
+        <div className="content-wrapper">
           {/* OPEN HOURS */}
-          <div className="card">
+          {content?.open_hours && <div className="card">
             {content?.open_hours && (
               <div className="list-item" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
                 <div className="icon-left">
@@ -135,11 +159,11 @@ export default function Page() {
                 <span>{day.opening_time} - {day.closing_time}</span>
               </div>
             ))}
-          </div>
+          </div>}
 
           {/* ADDRESS */}
           {content?.address && (
-            <div className="card">
+            <div className="card mx-2">
               <div className="list-item" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
                 <div className="icon-left">
                   <LocationIcon />
@@ -149,10 +173,17 @@ export default function Page() {
                 </div>
               </div>
               <p className="text mb-0" style={{ marginTop: 10 }}>{content.address}</p>
-              <a className="link mb-2">Show on Map</a>
+              <a
+                className="link mb-2"
+                href={mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Show on Map
+              </a>
             </div>)}
           {/* CONTACT */}
-          <div className="card">
+          <div className="card mx-2">
             <div className="list-item mb-3" style={{ paddingTop: 5, borderBottom: "1px solid #eee" }}>
               <div className="icon-left">
                 <GridIcon />
@@ -162,11 +193,14 @@ export default function Page() {
             </div>
 
             <Contact icon={<UserIcon />} label="Name" value={content?.name || ""} />
-            <Contact icon={<GlobeIcon />} label="google" value={content?.website || ""} />
+            <Contact icon={<GlobeIcon />} label="Website" value={content?.website || ""} />
             <Contact icon={<PhoneIcon />} label="Phone" value={content?.phone || ""} />
+            <Contact icon={<LandlineIcon />} label="Landline" value={content?.landline || ""} />
             <Contact icon={<MailIcon />} label="Email" value={content?.email || ""} />
           </div>
-          <h3>Our Social Networks</h3>
+          <div className="social-heading mx-2" >
+            <h3>Our Social Networks</h3>
+          </div>
           {/* SOCIAL LINKS *
           API DATA
           "content": {
@@ -187,111 +221,37 @@ export default function Page() {
                 }
             ]
         },/ SOCIAL LINKS */}
+          <div className="mx-2">
+            {socialLinks.map((item, index) => {
+              const meta = getSocialMeta(item.type);
+              return (
+                <div className="card social-card" key={`${item.type || "social"}-${index}`}>
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="list-item social-link"
+                  >
+                    <div className="icon-left">
+                      <WebsiteIcon url={item.url} />
+                    </div>
+                    <div className="list-text">
+                      <strong>{meta.label}</strong>
+                      <p>Follow & connect on {meta.label}</p>
+                    </div>
+                    <span className="arrow"><ArrowIcon /></span>
+                  </a>
+                </div>
+              );
+            })}
 
-          {getSocialLink("google") && (
-            <div className="card">
-              <a
-                href={getSocialLink("google")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="list-item"
-              >
-                <div className="icon-left">
-                  <GoogleIcon />
-                </div>
-                <div className="list-text">
-                  <strong>Google Review</strong>
-                  <p>follow and comment</p>
-                </div>
-                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
-              </a>
-            </div>
-          )}
-
-          {getSocialLink("facebook") && (
-            <div className="card">
-              <a
-                href={getSocialLink("facebook")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="list-item"
-              >
-                <div className="icon-left">
-                  <FacebookIcon />
-                </div>
-                <div className="list-text">
-                  <strong>Facebook</strong>
-                  <p>follow and comment</p>
-                </div>
-                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
-              </a>
-            </div>
-          )}
-
-          {getSocialLink("instagram") && (
-            <div className="card">
-              <a
-                href={getSocialLink("instagram")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="list-item"
-              >
-                <div className="icon-left">
-                  <InstagramIcon />
-                </div>
-                <div className="list-text">
-                  <strong>Instagram</strong>
-                  <p>follow and comment</p>
-                </div>
-                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
-              </a>
-            </div>
-          )}
-
-          {getSocialLink("x") && (
-            <div className="card">
-              <a
-                href={getSocialLink("x")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="list-item"
-              >
-                <div className="icon-left">
-                  <XIcon />
-                </div>
-                <div className="list-text">
-                  <strong>X</strong>
-                  <p>follow and comment</p>
-                </div>
-                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
-              </a>
-            </div>
-          )}
-
-          {getSocialLink("linkedin") && (
-            <div className="card">
-              <a
-                href={getSocialLink("linkedin")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="list-item"
-              >
-                <div className="icon-left">
-                  <LinkedinIcon />
-                </div>
-                <div className="list-text">
-                  <strong>Linkedin</strong>
-                  <p>follow and comment</p>
-                </div>
-                <span style={{ marginLeft: "auto" }}><ArrowIcon /></span>
-              </a>
-            </div>
-          )}
-
-<br />
-<hr />
-<br />
-          {/* LINKS SECTION */}
+            <br />
+            <hr />
+            <br />
+            {/* LINKS SECTION */}
+            {/* powred by QRDM */}
+            {/* <Powredbybrand /> */}
+          </div>
         </div>
       </div>
 
@@ -303,7 +263,7 @@ export default function Page() {
         }
 
         .header {
-          background: #5a7dc9;
+          background: #1b0c40;
           color: #fff;
           text-align: center;
           padding: 42px 16px 70px;
@@ -429,6 +389,102 @@ export default function Page() {
 
 .list-text strong {
   font-size: 15px;
+}
+
+@media (min-width: 992px) {
+
+  .content-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  .main-card {
+    max-width: 700px;
+    margin: -60px auto 30px;
+    padding: 30px;
+  }
+
+  .header {
+    padding: 70px 20px 120px;
+  }
+
+  .main-card h2 {
+    font-size: 28px;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+}
+
+
+
+
+
+.social-card {
+  background: linear-gradient(145deg, #ffffff, #f9faff);
+  border-radius: 18px;
+  padding: 6px 18px;
+  transition: all 0.3s ease;
+  border: 1px solid #eef1f6;
+}
+
+.social-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(90,125,201,0.15);
+  background: linear-gradient(145deg, #f7f9ff, #ffffff);
+}
+
+.social-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.icon-left {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eef3ff, #f7f9ff);
+  box-shadow: 
+    inset 0 2px 4px rgba(255,255,255,0.8),
+    0 4px 10px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease;
+}
+
+.social-card:hover .icon-left {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+.list-text strong {
+  font-size: 16px;
+}
+
+.list-text p {
+  font-size: 13px;
+  color: #8b8fa3;
+}
+
+.arrow {
+  margin-left: auto;
+  transition: transform 0.3s ease;
+  color: #7b8cff;
+}
+
+.social-card:hover .arrow {
+  transform: translateX(6px);
+}
+
+.social-heading {
+  text-align: center;   /* Mobile default */
+  margin: 20px 0 10px;
+}
+
+@media (min-width: 992px) {
+  .social-heading {
+    text-align: left;   /* Desktop */
+  }
 }
       `}</style>
     </>

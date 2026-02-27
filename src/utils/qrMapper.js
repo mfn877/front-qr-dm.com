@@ -8,9 +8,9 @@ export function mapQrFromApi(qr) {
     qid: qr.qid,
 
     title: getQrTitle(qr),
-
+    label: qr.qrtype_label || "",
     typeId: qr.qrtype,
-    typeName: type?.name || "QR",
+    typeName: qr?.qrtype_label || "QR",
     typeIcon: type?.icon || "qrcode",
 
     scans: qr.view ?? 0,

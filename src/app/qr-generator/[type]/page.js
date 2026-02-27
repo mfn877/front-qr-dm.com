@@ -19,6 +19,23 @@ export default function QRGeneratorPage({ params }) {
     setQrType(type);
   }, [type]);
 
+  const handleTypeChange = (nextType) => {
+    if (!nextType || nextType === qrType) return;
+    setQrType(nextType);
+    window.history.pushState({}, "", `/qr-generator/${nextType}`);
+  };
+
+  useEffect(() => {
+    const onPopState = () => {
+      const parts = window.location.pathname.split("/");
+      const last = parts[parts.length - 1];
+      if (last) setQrType(last);
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
   const [size, setSize] = useState(512);
@@ -36,7 +53,7 @@ export default function QRGeneratorPage({ params }) {
 
           <div className="generator-layout">
             {/* LEFT */}
-            <QRTypesSidebar activeType={qrType} />
+            <QRTypesSidebar activeType={qrType} onTypeChange={handleTypeChange} />
 
             {/* CENTER */}
             <QRContent

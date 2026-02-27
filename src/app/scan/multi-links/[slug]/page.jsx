@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import axios from "axios";
 import api from "@/lib/api";
 
 export default function MultiLinkQRPage() {
@@ -44,14 +43,32 @@ export default function MultiLinkQRPage() {
   const links = content?.links || [];
   const bgColor = qrData?.design?.bg_color || "#c4a8e8";
 
+const getFaviconUrl = (rawUrl) => {
+  const fallback = "/img/google.png";
+  if (!rawUrl || typeof rawUrl !== "string") return fallback;
+
+  try {
+    const cleaned = rawUrl.trim();
+    const hasProtocol = /^https?:\/\//i.test(cleaned);
+    const parsed = new URL(hasProtocol ? cleaned : `https://${cleaned}`);
+
+    return `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(
+      parsed.origin
+    )}`;
+  } catch {
+    return fallback;
+  }
+};
+
+
   return (
     <>
       <div className="page">
 
         {/* Header */}
-        <div className="header" style={{ background: bgColor }}>
-          <h1>{content.title || "QR Generator"}</h1>
-          <p>{content.description || ""}</p>
+        <div className="header" style={{ background: "#1b0c40" }}>
+          <h1 style={{ color: "#fff" }}>{content.title || "QR Generator"}</h1>
+          <p style={{ color: "#fff" }}>{content.description || ""}</p>
         </div>
 
         {/* Links Card */}
@@ -88,9 +105,14 @@ export default function MultiLinkQRPage() {
                 >
                   <div className="link-left">
                     <img
-                      src="/img/google.png"
-                      alt="icon"
+                      src={getFaviconUrl(link.url)}
+                      alt={`${link.label || "link"} favicon`}
                       className="icon"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/img/google.png";
+                      }}
                     />
                     <span>{link.label}</span>
                   </div>
@@ -174,6 +196,36 @@ export default function MultiLinkQRPage() {
         svg {
           color: #555;
         }
+
+        @media (min-width: 768px) {
+
+  .content {
+    max-width: 900px;
+    margin: -60px auto 60px;
+    padding: 0;
+  }
+
+  .header {
+    padding: 80px 20px 100px;
+  }
+
+  .header h1 {
+    font-size: 32px;
+  }
+
+  .header p {
+    font-size: 16px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .link {
+    font-size: 16px;
+  }
+
+}
       `}</style>
     </>
   );

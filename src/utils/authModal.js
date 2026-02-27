@@ -50,8 +50,7 @@ export const callLoginModal = (pageRoute = "/qr-generator") => {
  * Automatically updates API authorization header and closes modal on successful login
  * @param {Object} api - The API instance to update authorization header
  */
-export const useLoginSuccessListener = (api) => {
-  // console.log("useLoginSuccessListener initialized");
+export const useLoginSuccessListener = (api) => {  
   useEffect(() => {
     const listener = (e) => {
       // console.log("Message received in useLoginSuccessListener:", e.data);

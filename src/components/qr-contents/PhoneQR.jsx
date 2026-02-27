@@ -17,11 +17,13 @@ export default function PhoneQR() {
 
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [qrColor, setQrColor] = useState("#000000");
-  const [size, setSize] = useState(200);
+  const [size, setSize] = useState(310);
 
   const [pattern, setPattern] = useState("dots");
   const [eyeStyle, setEyeStyle] = useState("square");
   const [logo, setLogo] = useState(null);
+
+  const [loading, setLoading] = useState(false);
 
   const [qrSvg, setQrSvg] = useState(null);
 
@@ -30,12 +32,13 @@ export default function PhoneQR() {
   ======================= */
   const phoneResult = validatePhone(phone);
   const isValidPhone = phoneResult.isValid;
+  const [isPhoneComplete, setIsPhoneComplete] = useState(false);
 
   /* ======================
      QR VALUE
   ======================= */
   const phoneValue = isValidPhone
-    ? `tel:${phoneResult.cleanPhone}`
+    ? `${phoneResult.cleanPhone}`
     : "";
 
 
@@ -54,6 +57,7 @@ export default function PhoneQR() {
     }
 
     try {
+      setLoading(true);
       const payload = {
         track: 0,
         qrtype: 3, // PHONE QR
@@ -78,7 +82,7 @@ export default function PhoneQR() {
           title: "QR Saved!",
           text: "Your Phone QR has been saved successfully.",
           confirmButtonText: "OK",
-        }).then(() => router.push("/dashboard"));
+        });
 
       } else if (res?.data?.status === "unauthenticated") {
         callLoginModal("/qr-generator/phone");
@@ -92,6 +96,9 @@ export default function PhoneQR() {
       }
       console.error(err);
       Swal.fire("Error", "Something went wrong.", "error");
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -116,15 +123,18 @@ export default function PhoneQR() {
                   label="Phone Number"
                   required
                   value={phone}
-                  onChange={setPhone}
+                    onChange={(value) => {
+    setPhone(value);
+    setIsPhoneComplete(value.length > 3); // 👈 user started typing
+  }}
                 />
               </div>
+{ isPhoneComplete && !isValidPhone && (
+  <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+    Enter a valid phone number.
+  </p>
+)}
 
-              {phone && !isValidPhone && (
-                <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
-                  Enter a valid phone number.
-                </p>
-              )}
             </div>
           </div>
         </div>
@@ -326,6 +336,7 @@ export default function PhoneQR() {
         logo={logo}
         onSave={handleSaveQR}
         onSvgReady={setQrSvg}
+        loading={loading}
       />
     </>
   );
